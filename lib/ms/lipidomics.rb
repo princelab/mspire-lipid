@@ -7,6 +7,7 @@ module MS
 
   class Lipid
     class Modification
+      # mass of electron: 5.486 x 10-4 amu
       FORMULAS = {
         :proton => 'H+',
         :ammonium => 'NH3H+',
@@ -84,8 +85,10 @@ module MS
         :units => :ppm,
         :start_mz => 300,
         :end_mz => 2000,
-        :prob_binsize => 100,
+        #:prob_binsize => 100,
         :prob_bincnt => 100,
+        # if flexible_bin_size then overides prob_binsize
+        :flexible_bin_size => true, 
       }
 
       attr_accessor :options
@@ -126,9 +129,14 @@ module MS
       end
 
       def create_probability_function(possible_lipids, opts)
+        rng = Random.new
         mzs = possible_lipids.map(&:mz)
-        (opts[:start_mz]..opts[:end_mz]).step(opts[:prob_binsize]) do |start|
-          p start..opts[:prob_binsize]
+        # create a mock spectrum of intensity 1
+        spec = Spectrum.new(mzs, Array.new(mzs.size,1))
+        mzs.each_slice(opts[:prob_bincnt]) do |mzs|
+          random_mzs = opts[:prob_bincnt].times.map { rng.rand(mzs.first mzs.last) }
+          deltas = random_mzs.map {|random_mz| (random_mz - spec.find_all_nearest(random_mz).first).abs }
+          File.write("data.txt", deltas.join("\n"))
         end
 
       end
@@ -151,7 +159,7 @@ module MS
         if pieces[3] !~ /[A-Z]/  # <- there is no formula!
           nil
         else
-          pieces[4] = MS::Mass.formula_to_mass(pieces[3]) if high_res_mass
+          pieces[4] = MS::Mass.formula_to_exact_mass(pieces[3]) if high_res_mass
           if first_line
             Lipid.new *pieces
           else
