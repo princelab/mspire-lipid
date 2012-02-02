@@ -47,8 +47,8 @@ module MS
 
       # lipids is an array of Lipid objects.
       # block yields(lipids, modifications
-      def initialize(possible_lipids)
-        create_probability_function(possible_lipids)
+      def initialize(possible_lipids=[])
+        create_probability_function(possible_lipids) if possible_lipids.size > 0
       end
 
       def search(mzs, opts={})

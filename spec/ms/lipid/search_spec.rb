@@ -7,6 +7,8 @@ describe MS::Lipid::Search do
     @lipids = MS::LipidMaps.parse_file(TESTFILES + '/lipidmaps_short.tsv')
   end
 
-  it 'creates a probability distribution'
+  it 'creates a probability distribution' do
+
+  end
 
 end

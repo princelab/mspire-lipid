@@ -1,14 +1,19 @@
 
 module MS
-  module Lipid
+  class Lipid
     class Search
-      # a Lipid Search
-      class PossibleLipid
+      # a Lipid Query (yields a specific m/z value)
+      class Query
         # an MS::Lipid object
         attr_accessor :lipid
         # an MS::Lipid::Modifications object
         attr_accessor :modifications
         # the key attribute of a query
+
+        def initialize(lipid, mods=[])
+          @lipid = lipid
+          @modifications = mods
+        end
 
         def mz
           return @mz if @mz
