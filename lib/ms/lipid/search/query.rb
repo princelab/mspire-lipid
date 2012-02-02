@@ -20,10 +20,14 @@ module MS
           mass = @lipid.mass
           charge = 0
           @modifications.each do |mod|
-            mass = mod.gain ? mass + mod.mass : mass - mod.mass
+            mass += mod.massdiff 
             charge += mod.charge
           end
-          @mz = mass / charge
+          if charge == 0
+            @mz = nil
+          else
+            @mz = mass / charge
+          end
         end
       end
     end

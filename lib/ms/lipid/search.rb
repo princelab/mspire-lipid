@@ -1,6 +1,7 @@
+require 'ms/spectrum'
 
 module MS
-  module Lipid
+  class Lipid
     class Search
       STANDARD_MODIFICATIONS = {
         :proton => [1,2],
@@ -9,12 +10,11 @@ module MS
         :water => [1,2],
       }
       STANDARD_SEARCH = {
-        :tolerance => 5,
         :units => :ppm,
         :start_mz => 300,
         :end_mz => 2000,
-        :prob_binsize => 100,
         :prob_bincnt => 100,
+        :num_rand_samples_per_bin => 100,
       }
 
       attr_accessor :options
@@ -45,24 +45,31 @@ module MS
         self.new(possible_lipids)
       end
 
-      # lipids is an array of Lipid objects.
-      # block yields(lipids, modifications
-      def initialize(possible_lipids=[])
-        create_probability_function(possible_lipids) if possible_lipids.size > 0
+      # queries are MS::Lipid::Search::Query objects
+      # each one should give a non-nil m/z value
+      def initialize(queries=[])
+        create_probability_function(queries) if queries.size > 0
       end
 
-      def search(mzs, opts={})
+      # returns a funny kind of search spectrum where the m/z values are all
+      # the m/z values to search for and the intensities each an array
+      # corresponding to all the lipid queries matching that m/z value
+      def create_search_spectrum(queries)
+        mzs = [] ; query_groups = []
+        pairs = queries.group_by(&:mz).sort_by(&:first)
+        pairs.each {|mz, ar| mzs << mz ; query_groups << ar }
+        MS::Spectrum.new([mzs, query_groups])
       end
 
-      def create_probability_function(possible_lipids, opts)
+      def create_probability_function(queries, opts={})
+        opts = STANDARD_SEARCH.merge( opts )
         rng = Random.new
-        mzs = possible_lipids.map(&:mz)
+        spec = create_search_spectrum(queries)
         # create a mock spectrum of intensity 1
-        spec = Spectrum.new(mzs, Array.new(mzs.size,1))
-        mzs.each_slice(opts[:prob_bincnt]) do |mzs|
-          random_mzs = opts[:prob_bincnt].times.map { rng.rand(mzs.first mzs.last) }
+        spec.peaks.each_slice(opts[:prob_bincnt]) do |peaks|
+          mz_range = Range.new( peaks.first.first, peaks.last.first )
+          random_mzs = opts[:num_rand_samples_per_bin].times.map { rng.rand(mz_range) }
           deltas = random_mzs.map {|random_mz| (random_mz - spec.find_all_nearest(random_mz).first).abs }
-          File.write("data.txt", deltas.join("\n"))
         end
       end
     end
