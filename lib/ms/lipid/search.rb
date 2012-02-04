@@ -20,7 +20,9 @@ module MS
         # returns an EVD object
         def self.ppms_to_evd(ppms)
           %w(ismev evd).each do |lib|
+            p EVD_R
             reply = EVD_R.converse "library(#{lib})"
+            puts "REAPLY: #{reply}"
             unless reply.size > 4  # ~roughly
               $stderr.puts "The libraries ismev and evd must be installed in your R env!"
               $stderr.puts "From within R:"
@@ -125,9 +127,11 @@ module MS
           # find the deltas
           ppms = random_mzs.map do |random_mz| 
             nearest_random_mz = spec.find_all_nearest(random_mz).first
-            ((random_mz - nearest_random_mz).abs/nearest_random_mz) * 1e6
+            delta = (random_mz - nearest_random_mz).abs
+            opts[:ppm] ? delta./(nearest_random_mz).*(1e6) : delta
           end
-          evd = EVD.ppms_to_evd(ppms)
+          File.write("data_#{mz_range}.dataset", "deltas\n" + ppms.join("\n"))
+          #evd = EVD.ppms_to_evd(ppms)
         end
       end
 
