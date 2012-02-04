@@ -7,6 +7,7 @@ module MS
     class Search
       class EVD
         EVD_R = Rserve::Simpler.new
+        attr_accessor :location, :scale, :shape
         # takes location, scale and shape parameters
         def initialize(location, scale, shape)
           @location, @scale, @shape = location, scale, shape
@@ -20,7 +21,6 @@ module MS
         # returns an EVD object
         def self.ppms_to_evd(ppms)
           %w(ismev evd).each do |lib|
-            p EVD_R
             reply = EVD_R.converse "library(#{lib})"
             puts "REAPLY: #{reply}"
             unless reply.size > 4  # ~roughly
@@ -34,8 +34,8 @@ module MS
           #p EVD_R.converse("cor(c(1,2,3), c(4,4,6))", :ppmsl_r => ppmsl )
           #params = EVD_R.converse("hist(ppms_r, 50)", :ppms_r => ppms )
           params = EVD_R.converse("m <- gev.fit(log(ppms_r)); c(m$mle[1], m$mle[2], m$mle[3])", :ppms_r => ppms )
-          EVD_R.command("svggev.diag(m)")
-          EVD_R.pause
+          #EVD_R.command("svggev.diag(m)")
+          #EVD_R.pause
           EVD.new(*params)
         end
             #ppmsl = log(ppms)
@@ -118,20 +118,28 @@ module MS
 
         rng = Random.new
         # create a mock spectrum of intensity 1
+        mz_ranges = []
         evds = spec.peaks.in_groups(optimal_num_groups,false).map do |peaks|
           mz_range = Range.new( peaks.first.first, peaks.last.first )
+          mz_ranges << mz_range
           random_mzs = opts[:num_rand_samples_per_bin].times.map { rng.rand(mz_range) }
           puts "*****************************"
           puts "MZRANGE: "
           p mz_range
           # find the deltas
-          ppms = random_mzs.map do |random_mz| 
+          diffs = random_mzs.map do |random_mz| 
             nearest_random_mz = spec.find_all_nearest(random_mz).first
             delta = (random_mz - nearest_random_mz).abs
             opts[:ppm] ? delta./(nearest_random_mz).*(1e6) : delta
           end
-          File.write("data_#{mz_range}.dataset", "deltas\n" + ppms.join("\n"))
-          #evd = EVD.ppms_to_evd(ppms)
+          #File.write("data_#{mz_range}.dataset", "deltas\n" + diffs.join("\n"))
+          EVD.ppms_to_evd(diffs)
+        end
+        File.open("plot_evd_params_ppm_#{!!opt[:ppm]}.data",'w') do |out|
+          out.puts %w(mzrange loc scale shape).join("\t")
+          evds.zip(mz_ranges) do |evd, range|
+            out.puts [range, evd.location, evd.scale, evd.shape].join("\t")
+          end
         end
       end
 
