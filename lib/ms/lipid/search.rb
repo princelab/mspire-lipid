@@ -1,8 +1,46 @@
 require 'ms/spectrum'
+require 'rserve/simpler'  # TODO: move to integrated interface with rserve when available
+require 'core_ext/array/in_groups'
 
 module MS
   class Lipid
     class Search
+      class EVD
+        EVD_R = Rserve::Simpler.new
+        # takes location, scale and shape parameters
+        def initialize(location, scale, shape)
+          @location, @scale, @shape = location, scale, shape
+        end
+        # takes a ppm and returns the pvalue
+        # note that it will take the 
+        def pvalue(ppm)
+          EVD_R.converse "pgev(log(#{ppm}), #{@location}, #{@scale}, #{@shape})"
+        end
+
+        # returns an EVD object
+        def self.ppms_to_evd(ppms)
+          %w(ismev evd).each do |lib|
+            reply = EVD_R.converse "library(#{lib})"
+            unless reply.size > 4  # ~roughly
+              $stderr.puts "The libraries ismev and evd must be installed in your R env!"
+              $stderr.puts "From within R:"
+              $stderr.puts %Q{install.packages("ismev") ; install.packages("evd")}
+              raise "must have R (rserve) and ismev and evd installed!"
+            end
+          end
+          #ppmsl = ppms.map {|v| Math::log(v) }
+          #p EVD_R.converse("cor(c(1,2,3), c(4,4,6))", :ppmsl_r => ppmsl )
+          #params = EVD_R.converse("hist(ppms_r, 50)", :ppms_r => ppms )
+          params = EVD_R.converse("m <- gev.fit(log(ppms_r)); c(m$mle[1], m$mle[2], m$mle[3])", :ppms_r => ppms )
+          EVD_R.command("svggev.diag(m)")
+          EVD_R.pause
+          EVD.new(*params)
+        end
+            #ppmsl = log(ppms)
+            #gev.fit(ppmsl)
+        # pgev(log10(#{TEST_PVAL}), model$mle[1], model$mle[2], model$mle[3])
+
+      end
       STANDARD_MODIFICATIONS = {
         :proton => [1,2],
         :ammonium => [1],
@@ -13,8 +51,8 @@ module MS
         :units => :ppm,
         :start_mz => 300,
         :end_mz => 2000,
-        :prob_bincnt => 100,
-        :num_rand_samples_per_bin => 100,
+        :prob_min_bincnt => 500,  # min number of peaks per bin (spread out over all)
+        :num_rand_samples_per_bin => 1000,
       }
 
       attr_accessor :options
@@ -48,7 +86,7 @@ module MS
       # queries are MS::Lipid::Search::Query objects
       # each one should give a non-nil m/z value
       def initialize(queries=[])
-        create_probability_function(queries) if queries.size > 0
+        @prob_function = create_probability_function(queries) if queries.size > 0
       end
 
       # returns a funny kind of search spectrum where the m/z values are all
@@ -61,17 +99,38 @@ module MS
         MS::Spectrum.new([mzs, query_groups])
       end
 
+
+
       def create_probability_function(queries, opts={})
         opts = STANDARD_SEARCH.merge( opts )
-        rng = Random.new
+
         spec = create_search_spectrum(queries)
+        # make sure we get the right bin size based on the input
+        ss = spec.mzs.size ; optimal_num_groups = 1
+        (1..ss).each do |divisions|
+          if  (ss.to_f / divisions) >= opts[:prob_min_bincnt]
+            optimal_num_groups = divisions
+          else ; break
+          end
+        end
+
+        rng = Random.new
         # create a mock spectrum of intensity 1
-        spec.peaks.each_slice(opts[:prob_bincnt]) do |peaks|
+        evds = spec.peaks.in_groups(optimal_num_groups,false).map do |peaks|
           mz_range = Range.new( peaks.first.first, peaks.last.first )
           random_mzs = opts[:num_rand_samples_per_bin].times.map { rng.rand(mz_range) }
-          deltas = random_mzs.map {|random_mz| (random_mz - spec.find_all_nearest(random_mz).first).abs }
+          puts "*****************************"
+          puts "MZRANGE: "
+          p mz_range
+          # find the deltas
+          ppms = random_mzs.map do |random_mz| 
+            nearest_random_mz = spec.find_all_nearest(random_mz).first
+            ((random_mz - nearest_random_mz).abs/nearest_random_mz) * 1e6
+          end
+          evd = EVD.ppms_to_evd(ppms)
         end
       end
+
     end
   end
 end

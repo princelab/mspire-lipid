@@ -16,3 +16,4 @@ describe MS::LipidMaps do
     ll.lm_id.should == "LMPK12050388"
   end
 end
+
