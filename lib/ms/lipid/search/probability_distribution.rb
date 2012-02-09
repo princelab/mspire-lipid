@@ -7,7 +7,7 @@ module MS
         R = Rserve::Simpler.new
         # takes location, scale and shape parameters
         attr_accessor :location, :scale, :shape
-        # type is :ppm or :amu
+        # type is :ppm or :delta_abs
         attr_accessor :type
         def initialize(location, scale, shape, type=DEFAULT_TYPE)
           @location, @scale, @shape = location, scale, shape
@@ -15,8 +15,16 @@ module MS
         end
 
         # takes a deviation and returns the pvalue
-        def pvalue(dev)
-          R.converse "pgev(log(#{dev}), #{@location}, #{@scale}, #{@shape})"
+        def pvalue(hit)
+
+          R.converse "pgev(log(#{hit.send(type)}), #{@location}, #{@scale}, #{@shape})"
+        end
+
+        # same as pvalue, just tries to limit the number of calls to R to
+        # speed things up!
+        def pvalues(hits)
+          devs = hits.map(&type)
+          R.converse("sapply(r_devs, function(elt) pgev(log(elt), #{@location}, #{@scale}, #{@shape}))", :r_devs => devs)
         end
 
         def self.require_r_library(lib)

@@ -61,6 +61,10 @@ module MS
       # q-values (will switch to Storey soon enough).  The HitGroups are
       # returned in the order in which the mz_values are given.
       def search(mz_values, num_nearest=3)
+
+        # associate each mz_value with a bin
+
+
         # takes an array rather than single m/z values because we can
         # eventually do a ratchet search and it allows us to calculate FDR for
         # the whole group.
@@ -117,7 +121,6 @@ module MS
         # create the actual search function
         # always returns a hit group
         lambda do |mz, num_nearest_hits|
-          puts "MZ: #{mz}"
           bin = search_bins.find {|bin| bin === mz } 
           # returns a HitGroup
           bin.nearest_hits(mz, num_nearest_hits)

@@ -3,8 +3,8 @@ module MS
   class Lipid
     class Search
       class Hit
-        # an array of MS::Lipid::Search::Query objects
-        attr_accessor :query_group
+        # an array of the best db_isobar_groups, sorted from best hit to worst
+        attr_accessor :db_isobar_groups
         # the experimental m/z value
         attr_accessor :observed_mz
         # the probability the hit is due to random chance
@@ -14,6 +14,10 @@ module MS
         # intrinsic to the hit itself.
         attr_accessor :qvalue
 
+        # the probability distribution that can be used to determine its
+        # pvalue
+        attr_accessor :probability_distribution
+
         def initialize(hash={})
           hash.each {|k,v| instance_variable_set("@#{k}", v) }
         end
@@ -21,16 +25,20 @@ module MS
         # observed_mz - query m/z
         def delta
           puts @observed_mz
-          @observed_mz - @query_group.first.mz.to_f
+          @observed_mz - @db_isobar_groups.first.mz.to_f
+        end
+
+        # the absolute value of distance from true val
+        def delta_abs
         end
 
         # parts per million (divided by theoretical m/z)
         def ppm
-          (delta / @query_group.first.mz) * 1e6
+          (delta / @db_isobar_groups.first.mz) * 1e6
         end
 
         def theoretical_mz
-          @query_group.first.mz
+          @db_isobar_groups.first.mz
         end
 
         def inspect
