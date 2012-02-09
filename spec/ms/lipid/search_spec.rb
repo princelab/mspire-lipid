@@ -18,18 +18,36 @@ describe MS::Lipid::Search do
           MS::Lipid::Search::Query.new(lipid, mods)
         end
       end.flatten(1)
+      @samples = Hash[ {
+        :sample1 => [[187.1633, 244.22, 616.51, 717.50], 
+          [100, 200, 100, 200]],
+        :sample2 => [[187.164, 396.15, 244.24, 347.28, 618.502],
+          [110, 210, 110, 210, 110]],
+        :sample3 => [[187.160, 396.28, 244.24, 347.263, 618.511],
+          [120, 220, 120, 220, 120]],
+        :sample4 => [[187.157, 396.20, 244.30, 618.22, 933.01],
+          [30, 33, 38, 99, 22]],
+      }.map {|key,data| [key, MS::Spectrum.new(data)] } ]
+      @pretend_search_mzs = [187.157, 396.20, 244.30, 618.22, 933.01]
     end
 
-    xit 'creates a search spectrum' do
-      spec = subject.create_search_spectrum(@queries)
-      spec.mzs.any? {|mz| mz.nil? }.should be_false
-      spec.mzs.size.should == 56
-      spec.intensities.map(&:size).count(2).should == 4
-      spec.intensities.map(&:size).count(1).should == 52
+    xit 'creates a query search spectrum' do
+      #spec = .create_query_search_spectrum(@queries)
+      #spec.mzs.any? {|mz| mz.nil? }.should be_false
+      #spec.mzs.size.should == 56
+      #spec.intensities.map(&:size).count(2).should == 4
+      #spec.intensities.map(&:size).count(1).should == 52
     end
 
-    xit 'creates a probability distribution' do
-      subject.create_probability_function(@queries, :prob_bincnt => 20)
+    xit 'creates a probability function' do
+      #subject.create_search_function(@queries, :prob_min_bincnt => 20)
+    end
+
+    xit 'searches mz values' do
+      searcher = MS::Lipid::Search.new(@queries, :query_min_count_per_bin => 8, :num_rand_samples_per_bin => 1000, :ppm => false)
+      num_nearest_hits = 3
+      (hit_groups, qvals) = searcher.search(@pretend_search_mzs, 3)
+      p hit_groups.map(&:first).map(&:pvalue)
     end
   end
 
@@ -44,12 +62,17 @@ describe MS::Lipid::Search do
           MS::Lipid::Search::Query.new(lipid, mods)
         end
       end.flatten(1)
+      @pretend_search_mzs = [187.157, 396.20, 244.30, 618.22, 933.01]
     end
 
-    it 'creates a probability distribution' do
-      @queries.size
-      subject.create_probability_function(@queries, :prob_bincnt => 1000)
+    it 'returns hit groups parallel with input m/zs' do
+      searcher = MS::Lipid::Search.new(@queries, :query_min_count_per_bin => 1000, :ppm => false)
+      hit_groups = searcher.search(@pretend_search_mzs, 3)
+      best_hits = hit_groups.map(&:best_hit)
+      best_hits.map {|hit| hit.observed_mz }.should == @pretend_search_mzs
     end
+
+    it 'works with :ppm => true'
 
   end
 

@@ -101,6 +101,10 @@ module MS
         !gain?
       end
 
+      def inspect
+        "<Mod: #{charged_formula}>"
+      end
+
     end
   end
 end

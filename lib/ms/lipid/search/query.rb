@@ -29,6 +29,11 @@ module MS
             @mz = mass / charge
           end
         end
+
+        def inspect
+          "<|| Query mz=#{mz} #{lipid.inspect} + #{modifications.map(&:inspect).join(', ')} ||>"
+        end
+
       end
     end
   end

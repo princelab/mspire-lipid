@@ -2,91 +2,13 @@ require 'ms/spectrum'
 require 'rserve/simpler'  # TODO: move to integrated interface with rserve when available
 require 'core_ext/array/in_groups'
 require 'ms/lipid/search/hit'
+require 'ms/lipid/search/bin'
+require 'ms/lipid/modification'
+require 'ms/lipid/search/probability_distribution'
 
 module MS
   class Lipid
     class Search
-
-      # A Search::Bin is a range that contains the *entire* query spectrum
-      # (not just the portion covered by the range).  the query spectrum, and
-      # an EVD that describes the probability that a peak's delta to nearest
-      # peak is that small by chance.
-      class Bin < Range
-        # the intensity value of the query spectrum should be a query
-        attr_accessor :query_spectrum
-        attr_accessor :evd
-
-        def initialize(range_obj, query_spectrum)
-          super(range_obj.begin, range_obj.end, range_obj.exclude_end?)
-          @query_spectrum = query_spectrum
-        end
-
-        # returns the nearest num_hits MS::Lipid::Search::Hits sorted by delta
-        # [with tie going to the lower m/z]
-        def nearest_hits(mz, num_hits=1)
-          mzs = @query_spectrum.mzs
-          queries = @query_spectrum.intensities
-          index = @query_spectrum.find_nearest_index(mz)
-          _min = index - (num_nearest-1)
-          (_min >= 0) || (_min = 0)
-          _max = index + (num_nearest-1)
-          (_max < @query_spectrum.size) || (_max = @query_spectrum - 1)
-          delta_index_pairs = (_min.._max).map {|i| [mz.-(mzs[i]).abs, i] }.sort[0, num_to_return]
-          # this could be improved by updating the evd if it happens to jump
-          # to the next major Search::Bin
-          # of course, this has the advantage that the next nearest peaks will
-          # have the same probability distribution as the nearest peak.
-
-          delta_index_pairs.map do |delta, index|
-            hit = Hit.new( :query => queries[index], :observed_mz => mz)
-            dev = (evd.type == :ppm) ? hit.ppm : hit.delta.abs
-            hit.pvalue = evd.pvalue(dev)
-            hit
-          end
-        end
-
-        def to_range
-          Range.new( self.begin, self.end, self.exclude_end? )
-        end
-      end
-
-      class EVD
-        DEFAULT_TYPE = :ppm
-        EVD_R = Rserve::Simpler.new
-        # takes location, scale and shape parameters
-        attr_accessor :location, :scale, :shape
-        # type is :ppm or :amu
-        attr_accessor :type
-        def initialize(location, scale, shape, type=DEFAULT_TYPE)
-          @location, @scale, @shape = location, scale, shape
-          @type = type
-        end
-
-        # takes a deviation and returns the pvalue
-        def pvalue(dev)
-          EVD_R.converse "pgev(log(#{dev}), #{@location}, #{@scale}, #{@shape})"
-        end
-
-        def self.require_r_library(lib)
-          reply = EVD_R.converse "library(#{lib})"
-          puts "REAPLY: #{reply}"
-          unless reply.size > 4  # ~roughly
-            $stderr.puts "The libraries ismev and evd must be installed in your R env!"
-            $stderr.puts "From within R (works best if R is started with sudo or root for installing):"
-            $stderr.puts %Q{install.packages("ismev") ; install.packages("evd")}
-            raise "must have R (rserve) and ismev and evd installed!"
-          end
-        end
-
-        # returns an EVD object
-        def self.deviations_to_evd(type, devs)
-          %w(ismev evd).each {|lib| require_r_library(lib) }
-          params = EVD_R.converse("m <- gev.fit(log(devs_r))\n c(m$mle[1], m$mle[2], m$mle[3])", :devs_r => devs )
-          EVD.new(*params, type)
-        end
-      end
-
-
       STANDARD_MODIFICATIONS = {
         :proton => [1,2],
         :ammonium => [1],
@@ -95,25 +17,24 @@ module MS
       }
       STANDARD_SEARCH = {
         :units => :ppm,
-        :start_mz => 300,
-        :end_mz => 2000,
-        :prob_min_bincnt => 500,  # min number of peaks per bin (spread out over all)
+        :query_min_count_per_bin => 500,  # min number of peaks per bin
         :num_rand_samples_per_bin => 1000,
       }
 
       attr_accessor :options
+      attr_accessor :search_function
 
       # will generate PossibleLipid objects and return a new search object
       # uses only one kind of loss at a time and one type of gain at a time
       # will also do the combination of a gain and a loss if gain_and_loss is
       # true
-      def self.simple_search(lipids, mods=STANDARD_MODIFICATIONS, gain_and_loss=false)
+      def self.generate_simple_queries(lipids, mods=STANDARD_MODIFICATIONS, gain_and_loss=false)
         possible_lipids = []
         real_mods_and_cnts = mods.map {|name, cnts| [MS::Lipid::Modification.new(name), cnts] }
         # one of each
         real_mods_and_cnts.each do |mod, counts|
           counts.each do |cnt|
-            possible_lipids << MS::Lipid::Search::PossibleLipid.new(lipid, Array.new(cnt, mod))
+            possible_lipids << MS::Lipid::Search::Query.new(lipid, Array.new(cnt, mod))
           end
         end
         if gain_and_loss
@@ -131,54 +52,139 @@ module MS
 
       # queries are MS::Lipid::Search::Query objects
       # each one should give a non-nil m/z value
-      def initialize(queries=[])
-        @prob_function = create_probability_function(queries) if queries.size > 0
+      def initialize(queries, opts={})
+        @options = opts
+        @search_function = create_search_function(queries, opts)
       end
+
+      # returns an array of HitGroup and a parallel array of BH derived
+      # q-values (will switch to Storey soon enough).  The HitGroups are
+      # returned in the order in which the mz_values are given.
+      def search(mz_values, num_nearest=3)
+        # takes an array rather than single m/z values because we can
+        # eventually do a ratchet search and it allows us to calculate FDR for
+        # the whole group.
+        hit_groups = mz_values.map do |mz|
+          @search_function.call(mz, num_nearest)
+        end
+
+        # from http://stats.stackexchange.com/questions/870/multiple-hypothesis-testing-correction-with-benjamini-hochberg-p-values-or-q-va
+        # but I've already coded this up before, too, in multiple ways...
+        prev_bh_value = 0
+        num_total_tests = hit_groups.size
+
+        #hit_groups.each {|hg| p [hg.first.pvalue, hg] }
+
+        # calculate Q-values BH style for now:
+        # first hit is the best hit in the group
+        pval_hg_index_triplets = hit_groups.each_with_index.map {|hg,i| [hg.first.pvalue, hg, i] }
+
+        if pval_hg_index_triplets.any? {|pair| pair.first.nan? }
+          $stderr.puts "pvalue of NaN!"
+          $stderr.puts ">>> Consider increasing query_min_count_per_bin or setting ppm to false <<<"
+          raise
+        end
+
+        pval_hg_index_triplets.sort.each_with_index do |triplet,i|
+          pval = triplet.first
+          bh_value = pval * num_total_tests / (i + 1)
+          # Sometimes this correction can give values greater than 1,
+          # so we set those values at 1
+          bh_value = [bh_value, 1].min
+
+          # To preserve monotonicity in the values, we take the
+          # maximum of the previous value or this one, so that we
+          # don't yield a value less than the previous.
+          bh_value = [bh_value, prev_bh_value].max
+          prev_bh_value = bh_value
+          triplet[1].first.qvalue = bh_value # give the top hit the q-value
+        end
+
+        # return hit groups
+        pval_hg_index_triplets.sort_by(&:last).map {|trip| trip[1] }
+      end
+
+
+      def create_search_function(queries, opts={})
+        opt = STANDARD_SEARCH.merge( opts )
+
+        query_spectrum = create_query_search_spectrum(queries)
+
+        search_bins = create_search_bins(query_spectrum, opt[:query_min_count_per_bin])
+
+        create_probability_distribution_for_search_bins!(search_bins, query_spectrum, opt[:num_rand_samples_per_bin], opt[:ppm])
+        search_bins
+        # create the actual search function
+        # always returns a hit group
+        lambda do |mz, num_nearest_hits|
+          puts "MZ: #{mz}"
+          bin = search_bins.find {|bin| bin === mz } 
+          # returns a HitGroup
+          bin.nearest_hits(mz, num_nearest_hits)
+        end
+      end
+
+      #####################################################
+      # Ancillary to create_search_function:
+      #####################################################
 
       # returns a funny kind of search spectrum where the m/z values are all
       # the m/z values to search for and the intensities each an array
       # corresponding to all the lipid queries matching that m/z value
-      def create_search_spectrum(queries)
+      def create_query_search_spectrum(queries)
         mzs = [] ; query_groups = []
         pairs = queries.group_by(&:mz).sort_by(&:first)
         pairs.each {|mz, ar| mzs << mz ; query_groups << ar }
         MS::Spectrum.new([mzs, query_groups])
       end
 
-      def create_probability_function(queries, opts={})
-        opts = STANDARD_SEARCH.merge( opts )
+      # use_ppm uses ppm or amu if false
+      # returns the search_bins
+      def create_probability_distribution_for_search_bins!(search_bins, query_spectrum, num_rand_samples_per_bin, use_ppm=true)
+        search_bins.each do |search_bin| 
+          rng = Random.new
+          random_mzs = num_rand_samples_per_bin.times.map { rng.rand(search_bin.to_range)  }
+          # find the deltas
+          diffs = random_mzs.map do |random_mz| 
+            nearest_random_mz = query_spectrum.find_nearest(random_mz)
+            delta = (random_mz - nearest_random_mz).abs
+            use_ppm ? delta./(nearest_random_mz).*(1e6) : delta
+          end
+          search_bin.probability_distribution = ProbabilityDistribution.deviations_to_probability_distribution((use_ppm ? :ppm : :amu), diffs)
+        end
+        search_bins
+      end
 
-        query_spectrum = create_search_spectrum(queries)
+      def create_search_bins(query_spectrum, min_n_per_bin)
 
         # make sure we get the right bin size based on the input
         ss = query_spectrum.mzs.size ; optimal_num_groups = 1
         (1..ss).each do |divisions|
-          if  (ss.to_f / divisions) >= opts[:prob_min_bincnt]
+          if  (ss.to_f / divisions) >= min_n_per_bin
             optimal_num_groups = divisions
           else ; break
           end
         end
 
         mz_ranges = []
-        last_peaks_group = nil
-        search_bins = query_spectrum.peaks.in_groups(optimal_num_groups,false).each_cons(2).map do |peaks1, peaks2|
-          bin = MS::Lipid::Search::Bin.new( Range.new(peaks1.first.first, peaks2.first.first, true), query_spectrum )
-          last_peaks_group = peaks2
-          bin
-        end
-        _range = Range.new(last_peaks_group.first.first, last_peaks_group.last.first)
-        search_bins << MS::Lipid::Search::Bin.new(_range, query_spectrum) # inclusive
+        prev = nil
 
-        search_bins.map do |search_bin| 
-          rng = Random.new
-          random_mzs = opts[:num_rand_samples_per_bin].times.map { rng.rand(search_bin.to_range)  }
-          # find the deltas
-          diffs = random_mzs.map do |random_mz| 
-            nearest_random_mz = query_spectrum.find_nearest(random_mz)
-            delta = (random_mz - nearest_random_mz).abs
-            opts[:ppm] ? delta./(nearest_random_mz).*(1e6) : delta
+        groups = query_spectrum.points.in_groups(optimal_num_groups,false).to_a
+
+        case groups.size
+        when 0
+          raise 'I think you need some data in your query spectrum!'
+        when 1
+          group = groups.first
+          [ MS::Lipid::Search::Bin.new( Range.new(group.first.first, group.last.first), query_spectrum ) ]
+        else
+          search_bins = groups.each_cons(2).map do |points1, points2|
+            bin = MS::Lipid::Search::Bin.new( Range.new(points1.first.first, points2.first.first, true), query_spectrum )
+            prev = points2
+            bin
           end
-          EVD.deviations_to_evd(diffs, (opts[:ppm] ? :ppm : :amu))
+          _range = Range.new(prev.first.first, prev.last.first)
+          search_bins << MS::Lipid::Search::Bin.new(_range, query_spectrum) # inclusive
         end
       end
     end
