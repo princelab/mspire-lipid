@@ -13,6 +13,7 @@ module MS
         def initialize(lipid, mods=[])
           @lipid = lipid
           @modifications = mods
+          @mz = nil
         end
 
         def mz

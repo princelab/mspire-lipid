@@ -46,7 +46,7 @@ end.flatten(1)
 searcher = MS::Lipid::Search.new(queries, :ppm => false)
 
 files.each do |file|
-  puts "/\"*80
+  puts "/\\"*80
   puts "FILE: #{file}"
   sample = Sample.new(file)
 
