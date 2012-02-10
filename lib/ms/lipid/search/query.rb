@@ -34,8 +34,16 @@ module MS
         def inspect
           "<|| Query mz=#{mz} #{lipid.inspect} + #{modifications.map(&:inspect).join(', ')} ||>"
         end
-
       end
+
+      # a set of queries that have an identical m/z
+      class QueryGroup < Array
+        def mz
+          return @mz if @mz
+          @mz = first.mz
+        end
+      end
+
     end
   end
 end

@@ -5,8 +5,8 @@ module MS
 
       # A Search::Bin is a range that contains the *entire* query spectrum
       # (not just the portion covered by the range).  the query spectrum, and
-      # an EVD that describes the probability that a peak's delta to nearest
-      # peak is that small by chance.
+      # a ProbabilityDistribution -- the probability that a peak's delta to
+      # nearest peak is that small by chance.
       class Bin < Range
         # the intensity value of the query spectrum should be a query
         attr_accessor :query_spectrum
@@ -17,17 +17,15 @@ module MS
           @query_spectrum = query_spectrum
         end
 
-        # returns the nearest num_hits MS::Lipid::Search::Hits sorted by delta
+        # searches many mzs and returns an array of HitGroup objects parallel
+        # to mzs
+        def hit_groups(mzs, hit_group_size=1)
+              
+        end
+
+        # returns an array of MS::Lipid::Search::HitGroups sorted by delta
         # [with tie going to the lower m/z]
-        def nearest_hits(mz, num_hits=1)
-          mzs = @query_spectrum.mzs
-          query_groups = @query_spectrum.intensities
-          index = @query_spectrum.find_nearest_index(mz)
-          _min = index - (num_hits-1)
-          (_min >= 0) || (_min = 0)
-          _max = index + (num_hits-1)
-          (_max < mzs.size) || (_max = @query_spectrum - 1)
-          delta_index_pairs = (_min.._max).map {|i| [mz.-(mzs[i]).abs, i] }.sort[0, num_hits]
+        def hit_group(mz, hit_group_size=1)
           # this could be improved by updating the probability_distribution if
           # it happens to jump to the next major Search::Bin of course, this
           # has the advantage that the next nearest peaks will have the same
@@ -40,6 +38,19 @@ module MS
             hit
           end
           MS::Lipid::Search::HitGroup.new(hits)
+        end
+
+        # returns an array of doublets [delta, query_group] the nearest doublets to that m/z
+        # and the associated QueryGroup object
+        def nearest_points(mz, num_query_groups)
+          mzs = @query_spectrum.mzs
+          query_groups = @query_spectrum.intensities
+          index = @query_spectrum.find_nearest_index(mz)
+          _min = index - (hit_group_size-1)
+          (_min >= 0) || (_min = 0)
+          _max = index + (hit_group_size-1)
+          (_max < mzs.size) || (_max = @query_spectrum - 1)
+          delta_index_pairs = (_min.._max).map {|i| [mz.-(mzs[i]).abs, i] }.sort[0, hit_group_size]
         end
 
         def inspect
