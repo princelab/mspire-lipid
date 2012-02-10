@@ -19,6 +19,8 @@ class Sample
     MS::Mzml.foreach(file) do |spectrum|
       spectra << spectrum if spectrum.mzs.size > 1000  # <<<<<<------ kludge for ms_level == 1
     end
+    spectra.each {|spectrum| spectrum.sort! }
+
     MS::Spectrum.merge(spectra, :bin_width => 3, :bin_unit => :ppm)
   end
 end
@@ -31,6 +33,8 @@ end
 (lipidmaps, *files) = ARGV
 
 $VERBOSE = 5
+
+TOP_N_PEAKS = 2000
 
 proton = MS::Lipid::Modification.new(:proton)
 h2o_loss = MS::Lipid::Modification.new(:water, :loss => true)
@@ -46,11 +50,17 @@ end.flatten(1)
 searcher = MS::Lipid::Search.new(queries, :ppm => false)
 
 files.each do |file|
-  puts "/\\"*80
+  puts "/\\"*38
   puts "FILE: #{file}"
+  puts "/\\"*38
   sample = Sample.new(file)
 
-  hit_groups = searcher.search(sample.spectrum)
+  num_points = sample.spectrum.mzs.size
+
+  highest_points = sample.spectrum.points.sort_by(&:last).reverse[0,TOP_N_PEAKS].sort
+  sample.spectrum = MS::Spectrum.from_points( highest_points )
+
+  hit_groups = searcher.search(sample.spectrum.mzs)
 
   hit_groups.map(&:first).sort_by(&:pvalue).each do |hit|
     puts "="*80
