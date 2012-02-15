@@ -50,11 +50,12 @@ module MS
         self.new(possible_lipids)
       end
 
-      # queries are MS::Lipid::Search::Query objects
+      # ions are MS::Lipid::Ion objects
       # each one should give a non-nil m/z value
-      def initialize(queries, opts={})
+      def initialize(ions=[], opts={})
         @options = opts
-        @search_function = create_search_function(queries, opts)
+        @db_isobar_spectrum = create_db_isobar_spectrum(ions)
+        @search_function = create_search_function(ions, opts)
       end
 
       # returns an array of HitGroup and a parallel array of BH derived
@@ -109,14 +110,14 @@ module MS
       end
 
 
-      def create_search_function(queries, opts={})
+      def create_search_function(ions, opts={})
         opt = STANDARD_SEARCH.merge( opts )
 
-        query_spectrum = create_query_search_spectrum(queries)
+        db_isobar_spectrum = create_db_isobar_spectrum(ions)
 
-        search_bins = create_search_bins(query_spectrum, opt[:query_min_count_per_bin])
+        search_bins = create_search_bins(db_isobar_spectrum, opt[:query_min_count_per_bin])
 
-        create_probability_distribution_for_search_bins!(search_bins, query_spectrum, opt[:num_rand_samples_per_bin], opt[:ppm])
+        create_probability_distribution_for_search_bins!(search_bins, db_isobar_spectrum, opt[:num_rand_samples_per_bin], opt[:ppm])
         search_bins
         # create the actual search function
         # always returns a hit group
@@ -131,25 +132,25 @@ module MS
       # Ancillary to create_search_function:
       #####################################################
 
-      # returns a funny kind of search spectrum where the m/z values are all
-      # the m/z values to search for and the intensities each an array
-      # corresponding to all the lipid queries matching that m/z value
-      def create_query_search_spectrum(queries)
+      # returns a DB isobar spectrum where the m/z values are all the m/z
+      # values to search for and the intensities each an array corresponding
+      # to all the lipid ions matching that m/z value
+      def create_db_isobar_spectrum(ions)
         mzs = [] ; query_groups = []
-        pairs = queries.group_by(&:mz).sort_by(&:first)
+        pairs = ions.group_by(&:mz).sort_by(&:first)
         pairs.each {|mz, ar| mzs << mz ; query_groups << ar }
         MS::Spectrum.new([mzs, query_groups])
       end
 
       # use_ppm uses ppm or amu if false
       # returns the search_bins
-      def create_probability_distribution_for_search_bins!(search_bins, query_spectrum, num_rand_samples_per_bin, use_ppm=true)
+      def create_probability_distribution_for_search_bins!(search_bins, db_isobar_spectrum, num_rand_samples_per_bin, use_ppm=true)
         search_bins.each do |search_bin| 
           rng = Random.new
           random_mzs = num_rand_samples_per_bin.times.map { rng.rand(search_bin.to_range)  }
           # find the deltas
           diffs = random_mzs.map do |random_mz| 
-            nearest_random_mz = query_spectrum.find_nearest(random_mz)
+            nearest_random_mz = db_isobar_spectrum.find_nearest(random_mz)
             delta = (random_mz - nearest_random_mz).abs
             use_ppm ? delta./(nearest_random_mz).*(1e6) : delta
           end
@@ -158,10 +159,10 @@ module MS
         search_bins
       end
 
-      def create_search_bins(query_spectrum, min_n_per_bin)
+      def create_search_bins(db_isobar_spectrum, min_n_per_bin)
 
         # make sure we get the right bin size based on the input
-        ss = query_spectrum.mzs.size ; optimal_num_groups = 1
+        ss = db_isobar_spectrum.mzs.size ; optimal_num_groups = 1
         (1..ss).each do |divisions|
           if  (ss.to_f / divisions) >= min_n_per_bin
             optimal_num_groups = divisions
@@ -172,22 +173,22 @@ module MS
         mz_ranges = []
         prev = nil
 
-        groups = query_spectrum.points.in_groups(optimal_num_groups,false).to_a
+        groups = db_isobar_spectrum.points.in_groups(optimal_num_groups,false).to_a
 
         case groups.size
         when 0
           raise 'I think you need some data in your query spectrum!'
         when 1
           group = groups.first
-          [ MS::Lipid::Search::Bin.new( Range.new(group.first.first, group.last.first), query_spectrum ) ]
+          [ MS::Lipid::Search::Bin.new( Range.new(group.first.first, group.last.first), db_isobar_spectrum ) ]
         else
           search_bins = groups.each_cons(2).map do |points1, points2|
-            bin = MS::Lipid::Search::Bin.new( Range.new(points1.first.first, points2.first.first, true), query_spectrum )
+            bin = MS::Lipid::Search::Bin.new( Range.new(points1.first.first, points2.first.first, true), db_isobar_spectrum )
             prev = points2
             bin
           end
           _range = Range.new(prev.first.first, prev.last.first)
-          search_bins << MS::Lipid::Search::Bin.new(_range, query_spectrum) # inclusive
+          search_bins << MS::Lipid::Search::Bin.new(_range, db_isobar_spectrum) # inclusive
         end
       end
     end

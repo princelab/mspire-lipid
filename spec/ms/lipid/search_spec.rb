@@ -13,9 +13,9 @@ describe MS::Lipid::Search do
   describe 'searching a section of lipid maps' do
     before do
       @lipids = MS::LipidMaps.parse_file(TESTFILES + '/lipidmaps_short.tsv')
-      @queries = @lipids.map do |lipid| 
+      @ions = @lipids.map do |lipid| 
         [[@proton], [@proton, @h2o_loss]].map do |mods|
-          MS::Lipid::Search::Query.new(lipid, mods)
+          MS::Lipid::Ion.new(lipid, mods)
         end
       end.flatten(1)
       @samples = Hash[ {
@@ -32,7 +32,7 @@ describe MS::Lipid::Search do
     end
 
     xit 'creates a query search spectrum' do
-      #spec = .create_query_search_spectrum(@queries)
+      #spec = .create_query_search_spectrum(@ions)
       #spec.mzs.any? {|mz| mz.nil? }.should be_false
       #spec.mzs.size.should == 56
       #spec.intensities.map(&:size).count(2).should == 4
@@ -40,11 +40,11 @@ describe MS::Lipid::Search do
     end
 
     xit 'creates a probability function' do
-      #subject.create_search_function(@queries, :prob_min_bincnt => 20)
+      #subject.create_search_function(@ions, :prob_min_bincnt => 20)
     end
 
     xit 'searches mz values' do
-      searcher = MS::Lipid::Search.new(@queries, :query_min_count_per_bin => 8, :num_rand_samples_per_bin => 1000, :ppm => false)
+      searcher = MS::Lipid::Search.new(@ions, :query_min_count_per_bin => 8, :num_rand_samples_per_bin => 1000, :ppm => false)
       num_nearest_hits = 3
       (hit_groups, qvals) = searcher.search(@pretend_search_mzs, 3)
       p hit_groups.map(&:first).map(&:pvalue)
@@ -57,7 +57,7 @@ describe MS::Lipid::Search do
       # this will be specific to your install since it's not part of install
       path_to_lipidmaps_db = "#{ENV['HOME']}/tmp/tamil/lipidmaps_20120103_classes_1_2_3_4_5_6_7_8.exact_mass.tsv"
       @lipids = MS::LipidMaps.parse_file(path_to_lipidmaps_db)
-      @queries = @lipids.map do |lipid| 
+      @ions = @lipids.map do |lipid| 
         [[@proton], [@proton, @proton], [@proton, @h2o_loss]].map do |mods|
           MS::Lipid::Search::Query.new(lipid, mods)
         end
@@ -66,7 +66,7 @@ describe MS::Lipid::Search do
     end
 
     it 'returns hit groups parallel with input m/zs' do
-      searcher = MS::Lipid::Search.new(@queries, :query_min_count_per_bin => 1000, :ppm => false)
+      searcher = MS::Lipid::Search.new(@ions, :query_min_count_per_bin => 1000, :ppm => false)
       hit_groups = searcher.search(@pretend_search_mzs, 3)
       best_hits = hit_groups.map(&:best_hit)
       best_hits.map {|hit| hit.observed_mz }.should == @pretend_search_mzs

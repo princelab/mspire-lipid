@@ -24,12 +24,12 @@ module MS
 
         # observed_mz - query m/z
         def delta
-          puts @observed_mz
           @observed_mz - @db_isobar_groups.first.mz.to_f
         end
 
         # the absolute value of distance from true val
         def delta_abs
+          delta.abs
         end
 
         # parts per million (divided by theoretical m/z)

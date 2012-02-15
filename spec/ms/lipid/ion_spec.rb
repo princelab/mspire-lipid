@@ -1,17 +1,18 @@
 require 'spec_helper'
 
-require 'ms/lipid/search/query'
-require 'ms/lipid/modification'
-require 'ms/lipid'
 
-describe MS::Lipid::Search::Query do
+require 'ms/lipid'
+require 'ms/lipid/modification'
+require 'ms/lipid/ion'
+
+describe MS::Lipid::Ion do
   before do
     lipid = MS::Lipid.new
     lipid.mass = 300.2
     proton = MS::Lipid::Modification.new(:proton)
     h2o_loss = MS::Lipid::Modification.new(:water, :loss => true)
-    @plus1 = MS::Lipid::Search::Query.new(lipid, [proton, h2o_loss])
-    @plus2 = MS::Lipid::Search::Query.new(lipid, [proton, proton, h2o_loss])
+    @plus1 = MS::Lipid::Ion.new(lipid, [proton, h2o_loss])
+    @plus2 = MS::Lipid::Ion.new(lipid, [proton, proton, h2o_loss])
   end
 
   it 'calculates the correct m/z' do
