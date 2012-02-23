@@ -19,6 +19,8 @@ module MS
         :units => :ppm,
         :query_min_count_per_bin => 500,  # min number of peaks per bin
         :num_rand_samples_per_bin => 1000,
+        :num_nearest => 3,
+        :return_order => :as_given,  # or :sorted 
       }
 
       attr_accessor :options
@@ -53,25 +55,22 @@ module MS
       # ions are MS::Lipid::Ion objects
       # each one should give a non-nil m/z value
       def initialize(ions=[], opts={})
-        @options = opts
+        @options = STANDARD_SEARCH.merge(opts)
         @db_isobar_spectrum = create_db_isobar_spectrum(ions)
-        @search_function = create_search_function(ions, opts)
+        @search_function = create_search_function(ions, @options)
       end
 
       # returns an array of HitGroup and a parallel array of BH derived
       # q-values (will switch to Storey soon enough).  The HitGroups are
       # returned in the order in which the mz_values are given.
-      def search(mz_values, num_nearest=3)
+      # assumes search_queries are in ascending m/z order
+      def search(search_queries, opts={})
+        opt = @options.merge( opts )
+        hit_groups = @search_function.call(search_queries, opt[:num_nearest])
+        multiple_hypothesis_correction(hit_groups, opt)
+      end
 
-        # associate each mz_value with a bin
-
-
-        # takes an array rather than single m/z values because we can
-        # eventually do a ratchet search and it allows us to calculate FDR for
-        # the whole group.
-        hit_groups = mz_values.map do |mz|
-          @search_function.call(mz, num_nearest)
-        end
+      def multiple_hypothesis_correction(hit_groups, opts)
 
         # from http://stats.stackexchange.com/questions/870/multiple-hypothesis-testing-correction-with-benjamini-hochberg-p-values-or-q-va
         # but I've already coded this up before, too, in multiple ways...
@@ -82,16 +81,18 @@ module MS
 
         # calculate Q-values BH style for now:
         # first hit is the best hit in the group
-        pval_hg_index_triplets = hit_groups.each_with_index.map {|hg,i| [hg.first.pvalue, hg, i] }
+        pval_hg_index_tuples = hit_groups.each_with_index.map {|hg,i| [hg.pvalue, hg.delta.abs, hg.ppm.abs, i, hg] }
 
-        if pval_hg_index_triplets.any? {|pair| pair.first.nan? }
+        if pval_hg_index_tuples.any? {|pair| pair.first.nan? }
           $stderr.puts "pvalue of NaN!"
           $stderr.puts ">>> Consider increasing query_min_count_per_bin or setting ppm to false <<<"
           raise
         end
 
-        pval_hg_index_triplets.sort.each_with_index do |triplet,i|
-          pval = triplet.first
+        sorted_pval_index_tuples = pval_hg_index_tuples.sort
+
+        sorted_pval_index_tuples.each_with_index do |tuple,i|
+          pval = tuple.first
           bh_value = pval * num_total_tests / (i + 1)
           # Sometimes this correction can give values greater than 1,
           # so we set those values at 1
@@ -102,29 +103,34 @@ module MS
           # don't yield a value less than the previous.
           bh_value = [bh_value, prev_bh_value].max
           prev_bh_value = bh_value
-          triplet[1].first.qvalue = bh_value # give the top hit the q-value
+          tuple.last.first.qvalue = bh_value # give the top hit the q-value
         end
 
         # return hit groups
-        pval_hg_index_triplets.sort_by(&:last).map {|trip| trip[1] }
+        case opts[:return_order]
+        when :as_given
+          pval_hg_index_tuples.map(&:last)
+        when :sorted
+          sorted_pval_index_tuples.map(&:last)
+        else
+          raise "invalid :return_order option"
+        end
       end
 
-
-      def create_search_function(ions, opts={})
-        opt = STANDARD_SEARCH.merge( opts )
+      def create_search_function(ions, opt)
 
         db_isobar_spectrum = create_db_isobar_spectrum(ions)
 
         search_bins = create_search_bins(db_isobar_spectrum, opt[:query_min_count_per_bin])
 
         create_probability_distribution_for_search_bins!(search_bins, db_isobar_spectrum, opt[:num_rand_samples_per_bin], opt[:ppm])
-        search_bins
+
         # create the actual search function
-        # always returns a hit group
-        lambda do |mz, num_nearest_hits|
-          bin = search_bins.find {|bin| bin === mz } 
-          # returns a HitGroup
-          bin.nearest_hits(mz, num_nearest_hits)
+        # returns an array of hit_groups
+        lambda do |search_queries, num_nearest_hits|
+          Bin.bin(search_bins, search_queries, &:mz)
+          search_bins_with_data = search_bins.reject {|bin| bin.data.empty? }
+          hit_groups = search_bins_with_data.map {|bin| bin.queries_to_hit_groups!(opt[:num_nearest]) }.flatten(1)
         end
       end
 
@@ -160,7 +166,6 @@ module MS
       end
 
       def create_search_bins(db_isobar_spectrum, min_n_per_bin)
-
         # make sure we get the right bin size based on the input
         ss = db_isobar_spectrum.mzs.size ; optimal_num_groups = 1
         (1..ss).each do |divisions|

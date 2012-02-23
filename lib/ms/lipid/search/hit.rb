@@ -27,6 +27,8 @@ module MS
           @observed_mz - @db_isobar_groups.first.mz.to_f
         end
 
+        alias_method :amu, :delta
+
         # the absolute value of distance from true val
         def delta_abs
           delta.abs

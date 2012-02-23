@@ -5,6 +5,7 @@ module MS
       class ProbabilityDistribution
         DEFAULT_TYPE = :ppm
         R = Rserve::Simpler.new
+
         # takes location, scale and shape parameters
         attr_accessor :location, :scale, :shape
         # type is :ppm or :delta_abs
@@ -16,15 +17,14 @@ module MS
 
         # takes a deviation and returns the pvalue
         def pvalue(hit)
-
           R.converse "pgev(log(#{hit.send(type)}), #{@location}, #{@scale}, #{@shape})"
         end
 
         # same as pvalue, just tries to limit the number of calls to R to
         # speed things up!
         def pvalues(hits)
-          devs = hits.map(&type)
-          R.converse("sapply(r_devs, function(elt) pgev(log(elt), #{@location}, #{@scale}, #{@shape}))", :r_devs => devs)
+          deltas = hits.map {|v| v.send(type).abs }
+          R.converse("sapply(r_devs, function(elt) pgev(log(elt), #{@location}, #{@scale}, #{@shape}))", :r_devs => deltas)
         end
 
         def self.require_r_library(lib)
