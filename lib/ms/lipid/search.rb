@@ -19,7 +19,7 @@ module MS
         :units => :ppm,
         :query_min_count_per_bin => 500,  # min number of peaks per bin
         :num_rand_samples_per_bin => 1000,
-        :num_nearest => 3,
+        :num_nearest => 2,
         :return_order => :as_given,  # or :sorted 
       }
 

@@ -88,14 +88,20 @@ files.each do |file|
 
   hit_info = [:qvalue, :pvalue, :observed_mz, :theoretical_mz]
   second_hit_info = [:observed_mz]
-  db_isobar_info = [:size]
-  db_isobar_each_info = [:lipid]
+  db_isobar_group_info = [:size]
+  db_isobar_info = [:lipid]
 
   output = base + ".tsv"
   #puts "writing to #{output}" if $VERBOSE
   hit_groups[0,opts[:display_n]].each_with_index do |hit_group,i|
-    puts "=" * 78
-    puts "HIT ##{i+1}:"
-    p hit_group.first
+    ar = []
+    tophit = hit_group.first
+    ar.push *hit_info.map {|mthd| tophit.send(mthd) }
+    ar.push *second_hit_info.map {|mthd| hit_group[1].send(mthd) }
+    p tophit.db_isobar_groups
+    best_db_isobar_group = tophit.db_isobar_groups.first
+    p best_db_isobar_group
+    abort 'here'
+
   end
 end
