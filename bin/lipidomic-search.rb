@@ -27,11 +27,7 @@ class Sample
   # returns a single spectrum object
   def merge_ms1_spectra(file, opts)
     spectra = []
-    warn "using number of peaks as proxy for ms level right now"
-    MS::Mzml.foreach(file) do |spectrum|
-      spectra << spectrum if spectrum.mzs.size > 1000  # <<<<<<------ kludge for ms_level == 1
-    end
-    spectra.each {|spectrum| spectrum.sort! }
+    spectra = MS::Mzml.foreach(file).select {|spec| spec.ms_level == 1 }.map(&:sort!)
 
     MS::Spectrum.merge(spectra, opts)
   end
