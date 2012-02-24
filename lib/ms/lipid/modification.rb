@@ -90,7 +90,7 @@ module MS
       end
 
       def charged_formula
-        @formula + @charge.abs.times.map { @charge > 0 ? '+' : '-' }.join
+        @formula + @charge.abs.times.map { (@charge > 0) ? '+' : '-' }.join
       end
 
       def gain?

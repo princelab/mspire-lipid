@@ -16,7 +16,7 @@ module MS
         else
           if seen_first_line
             pieces[4] = MS::Mass.formula_to_exact_mass(pieces[3]) if high_res_mass
-            MS::Lipid.new *pieces
+            l = MS::Lipid.new *pieces
           else
             seen_first_line = true
             warn "lipidmaps column headers are not right!" unless pieces.map(&:downcase) == MS::Lipid.members.map(&:to_s)

@@ -67,10 +67,16 @@ module MS
       def search(search_queries, opts={})
         opt = @options.merge( opts )
         hit_groups = @search_function.call(search_queries, opt[:num_nearest])
-        multiple_hypothesis_correction(hit_groups, opt)
+        sorted_hit_groups = qvalues!(hit_groups, opt)
+        case opts[:return_order]
+        when :as_given
+          hit_groups
+        when :sorted
+          sorted_hit_groups
+        end
       end
 
-      def multiple_hypothesis_correction(hit_groups, opts)
+      def qvalues!(hit_groups, opts)
 
         # from http://stats.stackexchange.com/questions/870/multiple-hypothesis-testing-correction-with-benjamini-hochberg-p-values-or-q-va
         # but I've already coded this up before, too, in multiple ways...
@@ -106,15 +112,7 @@ module MS
           tuple.last.first.qvalue = bh_value # give the top hit the q-value
         end
 
-        # return hit groups
-        case opts[:return_order]
-        when :as_given
-          pval_hg_index_tuples.map(&:last)
-        when :sorted
-          sorted_pval_index_tuples.map(&:last)
-        else
-          raise "invalid :return_order option"
-        end
+        sorted_pval_index_tuples.map(&:last)
       end
 
       def create_search_function(ions, opt)

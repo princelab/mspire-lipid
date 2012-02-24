@@ -7,6 +7,9 @@ require 'ms/lipid/ion'
 require 'ms/lipid/search/query'
 require 'ms/lipid_maps'
 
+# for html output: (just make the id clickable)
+LIPIDMAPS_SEARCH = "http://www.lipidmaps.org/data/LMSDRecord.php?LMID="
+
 DEFAULTS = { 
   :bin_width => 5, 
   :bin_unit => :ppm,
@@ -34,14 +37,21 @@ class Sample
   end
 end
 
+ext = ".lipidID.tsv"
+
 parser = Trollop::Parser.new do
   banner "usage: #{File.basename(__FILE__)} [OPTIONS] <lipidmaps>.tsv <file>.mzML ..."
+  text "output: <file>#{ext} ..."
+  text ""
+  text "note that sometimes you get an error from R like this:"
+  text "(`eval': voidEval failed: Packet[cmd=2130771970,len=<nil>, con='<nil>', status=error...)"
+  text "just re-run it and it will work"
   text ""
   opt :bin_width, "width of the bins for merging", :default => DEFAULTS[:bin_width]
   opt :bin_unit, "units for binning (ppm or amu)", :default => DEFAULTS[:bin_unit].to_s
   opt :search_unit, "unit for searching nearest hit (ppm or amu)", :default => DEFAULTS[:search_unit].to_s
-  opt :top_n_peaks, "the number of highest intensity peaks to query the DB with", :default => 2000
-  opt :display_n, "the number of best hits to display", :default => 10
+  opt :top_n_peaks, "the number of highest intensity peaks to query the DB with", :default => 1000
+  opt :display_n, "the number of best hits to display", :default => 20
   opt :verbose, "talk about it"
 end
 
@@ -69,11 +79,12 @@ ions = lipids.map do |lipid|
   end
 end.flatten(1)
 
+
 searcher = MS::Lipid::Search.new(ions, :ppm => (opts[:search_unit] == :ppm))
 
 files.each do |file|
   base = file.chomp(File.extname(file))
-  puts "file: #{file}" if $VERBOSE
+  puts "processing file: #{file}" if $VERBOSE
   sample = Sample.new(file, opts)
 
   num_points = sample.spectrum.mzs.size
@@ -86,22 +97,30 @@ files.each do |file|
   queries = sample.spectrum.mzs.each_with_index.map {|mz,index| MS::Lipid::Search::Query.new(mz, index) }
   hit_groups = searcher.search(queries, :return_order => :sorted)
 
-  hit_info = [:qvalue, :pvalue, :observed_mz, :theoretical_mz]
-  second_hit_info = [:observed_mz]
-  db_isobar_group_info = [:size]
-  db_isobar_info = [:lipid]
+  hit_info = [:qvalue, :pvalue, :observed_mz, :theoretical_mz, :delta, :ppm]
+  second_hit_info = [:ppm]
 
-  output = base + ".tsv"
-  #puts "writing to #{output}" if $VERBOSE
-  hit_groups[0,opts[:display_n]].each_with_index do |hit_group,i|
-    ar = []
-    tophit = hit_group.first
-    ar.push *hit_info.map {|mthd| tophit.send(mthd) }
-    ar.push *second_hit_info.map {|mthd| hit_group[1].send(mthd) }
-    p tophit.db_isobar_groups
-    best_db_isobar_group = tophit.db_isobar_groups.first
-    p best_db_isobar_group
-    abort 'here'
-
+  output = base + ext
+  puts "writing to #{output}" if $VERBOSE
+  File.open(output, 'w') do |out|
+    out.puts (hit_info + %w(2nd_hit_ppm first_isobar_name num_isobars isobars)).join("\t")
+    hit_groups[0,opts[:display_n]].each_with_index do |hit_group,i|
+      ar = []
+      tophit = hit_group.first
+      ar.push *hit_info.map {|mthd| tophit.send(mthd) }
+      ar.push *second_hit_info.map {|mthd| hit_group[1].send(mthd) }
+      common_name = tophit.db_isobar_group.first.lipid.common_name
+      common_name = tophit.db_isobar_group.first.lipid.systematic_name if common_name == "-"
+      ar.push common_name
+      ar.push tophit.db_isobar_group.size
+      ions = tophit.db_isobar_group.map do |ion|
+        [ion.lipid.lm_id, ion.modifications.map do |mod| 
+          (mod.gain? ? '+' : '-') + "(#{mod.charged_formula})"
+        end.join
+        ].join(":")
+      end.join(' ')
+      ar.push ions
+      out.puts ar.join("\t")
+    end
   end
 end

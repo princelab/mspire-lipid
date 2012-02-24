@@ -29,7 +29,7 @@ module MS
           queries = @data.dup
           @data.clear
 
-          @db_isobar_groups = @db_spectrum.intensities
+          @db_isobar_groups_by_index = @db_spectrum.intensities
 
           hit_groups = queries.map do |query|
             best_hits(query, num_hits)
@@ -59,7 +59,7 @@ module MS
           top_num_hits_delta_index_pairs = closest_delta_index_pairs[0, num_hits]
           top_num_hit_indices = top_num_hits_delta_index_pairs.map(&:last)
           hit_group = top_num_hit_indices.map do |index|
-            Hit.new( :db_isobar_groups => @db_isobar_groups[index], :observed_mz => query_mz)
+            Hit.new( :db_isobar_group => @db_isobar_groups_by_index[index], :observed_mz => query_mz)
           end
           HitGroup.new(hit_group)
         end

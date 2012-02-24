@@ -3,8 +3,9 @@ module MS
   class Lipid
     class Search
       class Hit
-        # an array of the best db_isobar_groups, sorted from best hit to worst
-        attr_accessor :db_isobar_groups
+        # the db_isobar_group this hit is associated with.  Each hit is only
+        # associated with a single db_isobar_group!
+        attr_accessor :db_isobar_group
         # the experimental m/z value
         attr_accessor :observed_mz
         # the probability the hit is due to random chance
@@ -24,7 +25,7 @@ module MS
 
         # observed_mz - query m/z
         def delta
-          @observed_mz - @db_isobar_groups.first.mz.to_f
+          @observed_mz - @db_isobar_group.first.mz.to_f
         end
 
         alias_method :amu, :delta
@@ -36,11 +37,11 @@ module MS
 
         # parts per million (divided by theoretical m/z)
         def ppm
-          (delta / @db_isobar_groups.first.mz) * 1e6
+          (delta / @db_isobar_group.first.mz) * 1e6
         end
 
         def theoretical_mz
-          @db_isobar_groups.first.mz
+          @db_isobar_group.first.mz
         end
 
         def inspect
