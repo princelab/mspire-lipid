@@ -48,6 +48,7 @@ parser = Trollop::Parser.new do
   opt :search_unit, "unit for searching nearest hit (ppm or amu)", :default => DEFAULTS[:search_unit].to_s
   opt :top_n_peaks, "the number of highest intensity peaks to query the DB with", :default => 1000
   opt :display_n, "the number of best hits to display", :default => 20
+  opt :lithium, "also search for lithium adducts"
   opt :verbose, "talk about it"
 end
 
@@ -66,11 +67,16 @@ $VERBOSE = opts[:verbose]
 
 proton = MS::Lipid::Modification.new(:proton)
 h2o_loss = MS::Lipid::Modification.new(:water, :loss => true)
+lithium = MS::Lipid::Modification.new(:lithium)
 
 lipids = MS::LipidMaps.parse_file(lipidmaps)
 
 ions = lipids.map do |lipid| 
-  [[proton], [proton, h2o_loss]].map do |mods|
+  mod_groups = [[proton], [proton, h2o_loss]]
+  if opt[:lithium]
+    mod_groups.push( [lithium], [lithium, h2o_loss] )
+  end
+  mod_groups.map do |mods|
     MS::Lipid::Ion.new(lipid, mods)
   end
 end.flatten(1)
