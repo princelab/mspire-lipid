@@ -5,7 +5,7 @@
 
 Gem::Specification.new do |s|
   s.name = "ms-lipidomics"
-  s.version = "0.1.2"
+  s.version = "0.1.3"
 
   s.required_rubygems_version = Gem::Requirement.new(">= 0") if s.respond_to? :required_rubygems_version=
   s.authors = ["John T. Prince"]
@@ -35,6 +35,7 @@ Gem::Specification.new do |s|
     "lib/ms/lipid/search/probability_distribution.rb",
     "lib/ms/lipid/search/query.rb",
     "lib/ms/lipid_maps.rb",
+    "ms-lipidomics.gemspec",
     "spec/ms/lipid/ion_spec.rb",
     "spec/ms/lipid/modification_spec.rb",
     "spec/ms/lipid/search_spec.rb",
