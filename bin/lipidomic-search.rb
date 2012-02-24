@@ -73,7 +73,7 @@ lipids = MS::LipidMaps.parse_file(lipidmaps)
 
 ions = lipids.map do |lipid| 
   mod_groups = [[proton], [proton, h2o_loss]]
-  if opt[:lithium]
+  if opts[:lithium]
     mod_groups.push( [lithium], [lithium, h2o_loss] )
   end
   mod_groups.map do |mods|
