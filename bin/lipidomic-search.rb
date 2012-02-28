@@ -97,7 +97,7 @@ files.each do |file|
   sample.spectrum = MS::Spectrum.from_points( highest_points )
 
   queries = sample.spectrum.mzs.each_with_index.map {|mz,index| MS::Lipid::Search::Query.new(mz, index) }
-  hit_groups = searcher.search(queries, :return_order => :sorted)
+  hit_groups = searcher.search(queries, :return_order => :given)
 
   hit_info = [:qvalue, :pvalue, :observed_mz, :theoretical_mz, :delta, :ppm]
   second_hit_info = [:ppm]
