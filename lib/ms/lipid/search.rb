@@ -69,10 +69,12 @@ module MS
         hit_groups = @search_function.call(search_queries, opt[:num_nearest])
         sorted_hit_groups = qvalues!(hit_groups, opt)
         case opts[:return_order]
-        when :as_given
+        when :given
           hit_groups
         when :sorted
           sorted_hit_groups
+        else
+          raise ArgumentError, "invalid :return_order"
         end
       end
 

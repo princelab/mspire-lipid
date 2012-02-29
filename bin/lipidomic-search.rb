@@ -48,7 +48,14 @@ parser = Trollop::Parser.new do
   opt :search_unit, "unit for searching nearest hit (ppm or amu)", :default => DEFAULTS[:search_unit].to_s
   opt :top_n_peaks, "the number of highest intensity peaks to query the DB with", :default => 1000
   opt :display_n, "the number of best hits to display", :default => 20
-  opt :lithium, "also search for lithium adducts"
+  text ""
+  text "modifications (at least 1 charged mod is required):"
+  opt :lithium, "search for lithium adducts"
+  opt :ammonium, "search for ammonium adducts"
+  opt :proton_gain, "search for proton gain"
+  opt :proton_loss, "search for proton loss"
+  opt :water_loss, "*all* mods are also considered with water loss"
+  opt :decoy, "search with an equal number of decoy modifications"
   opt :verbose, "talk about it"
 end
 
@@ -61,28 +68,64 @@ if ARGV.size < 2
   exit
 end
 
+CHARGED_MODS = [:lithium, :ammonium, :proton_gain, :proton_loss]
+
+unless CHARGED_MODS.any? {|key| opts[key] }
+  puts "*" * 78
+  puts "ArgumentError: need at least one charged mod!"
+  puts "*" * 78
+  parser.educate
+  exit
+end
+
 (lipidmaps, *files) = ARGV
 
 $VERBOSE = opts[:verbose]
+DECOY_MODULATOR = 0.8319
+MSLM = MS::Lipid::Modification
 
-proton = MS::Lipid::Modification.new(:proton)
-h2o_loss = MS::Lipid::Modification.new(:water, :loss => true)
-lithium = MS::Lipid::Modification.new(:lithium)
+mods = {
+  proton_gain: MSLM.new(:proton),
+  h2o_loss: MSLM.new(:water, :loss => true),
+  lithium: MSLM.new(:lithium),
+  ammonium: MSLM.new(:ammonium),
+  proton_loss: MS::Lipid::Modification.new(:proton, :loss => true, :charge => -1)
+}
 
 lipids = MS::LipidMaps.parse_file(lipidmaps)
 
+
 ions = lipids.map do |lipid| 
-  mod_groups = [[proton], [proton, h2o_loss]]
-  if opts[:lithium]
-    mod_groups.push( [lithium], [lithium, h2o_loss] )
-  end
+  mod_groups = CHARGED_MODS.map do |key|
+    if opts[key]
+      ar = [mods[key]]
+      ar.push mods[:water_loss] if opts[:water_loss]
+      ar
+    end
+  end.compact
   mod_groups.map do |mods|
+    p mods.class
+    p mods.size
     MS::Lipid::Ion.new(lipid, mods)
   end
 end.flatten(1)
 
+if opts[:decoy]
+  # assumes a mod group that is either the mod or a mod and water loss
+  decoy_ions = ions.map do |ion|
+    fake_mods = ion.modifications.map do |mod_group|
+      fake_mod = mod_group.first.dup
+      fake_mod.massdiff *= DECOY_MODULATOR
+      fake_mod.formula = "FAKE#{mod_group.first.formula}(#{fake_mod.massdiff})"
+      fake_mod.name = "fake_#{mod_group.first.name}".to_sym
+      [fake_mod, *mod_group[1..-1]]
+    end
+    MS::Lipid::Ion.new(ion.lipid, fake_mods)
+  end
+end
 
 searcher = MS::Lipid::Search.new(ions, :ppm => (opts[:search_unit] == :ppm))
+decoy_searcher = MS::Lipid::Search.new(decoy_ions, :ppm => (opts[:search_unit] == :ppm)) if opts[:decoy]
 
 files.each do |file|
   base = file.chomp(File.extname(file))
@@ -97,9 +140,14 @@ files.each do |file|
   sample.spectrum = MS::Spectrum.from_points( highest_points )
 
   queries = sample.spectrum.mzs.each_with_index.map {|mz,index| MS::Lipid::Search::Query.new(mz, index) }
-  hit_groups = searcher.search(queries, :return_order => :given)
+  hit_groups = searcher.search(queries, :return_order => :sorted)
+  decoy_hit_groups = decoy_searcher.search(queries, :return_order => :sorted) if opts[:decoy]
+  decoy_qvalues = MS::ErrorRate::Qvalue.target_decoy_qvalues(hit_groups, decoy_hit_groups, :monotonic => true, &:pvalue)
+  p decoy_qvalues
+  abort 'here'
 
   hit_info = [:qvalue, :pvalue, :observed_mz, :theoretical_mz, :delta, :ppm]
+  hit_info.unshift(:decoy_qvalue) if opts[:decoy]
   second_hit_info = [:ppm]
 
   output = base + ext

@@ -24,7 +24,8 @@ module MS
         # speed things up!
         def pvalues(hits)
           deltas = hits.map {|v| v.send(type).abs }
-          R.converse("sapply(r_devs, function(elt) pgev(log(elt), #{@location}, #{@scale}, #{@shape}))", :r_devs => deltas)
+          reply = R.converse("sapply(r_devs, function(elt) pgev(log(elt), #{@location}, #{@scale}, #{@shape}))", :r_devs => deltas)
+          reply.is_a?(Array) ? reply : [reply]
         end
 
         def self.require_r_library(lib)
