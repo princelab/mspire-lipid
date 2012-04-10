@@ -1,8 +1,6 @@
-= ms-lipidomics
+= mspire-lipidomics
 
 Identify and quantify shotgun lipidomics samples.
-
-WARNING: VERY PRE-ALPHA RIGHT NOW.
 
 == Examples
  
@@ -10,4 +8,4 @@ Use the commandline: lipidomic-search.rb
 
 == Copyright
 
-MIT (See LICENSE.txt)
+MIT (See LICENSE)
