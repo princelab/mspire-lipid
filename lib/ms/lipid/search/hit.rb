@@ -15,6 +15,9 @@ module MS
         # intrinsic to the hit itself.
         attr_accessor :qvalue
 
+        # qvalue derived from decoy testing
+        attr_accessor :decoy_qvalue
+
         # the probability distribution that can be used to determine its
         # pvalue
         attr_accessor :probability_distribution
@@ -64,8 +67,9 @@ module MS
         def theoretical_mz() first.theoretical_mz end
         def query_group() first.query_group end
         def observed_mz() first.observed_mz end
-        def pvalue() first.pvalue end
-        def qvalue() first.pvalue end
+        def pvalue() ; first.pvalue end
+        def qvalue() ; first.qvalue end
+        def decoy_qvalue() ; first.decoy_qvalue end
 
         def best_hit() first end
 
