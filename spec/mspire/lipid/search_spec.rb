@@ -1,21 +1,21 @@
 require 'spec_helper'
 
-require 'ms/lipid_maps'
-require 'ms/lipid/search'
-require 'ms/lipid/search/query'
-require 'ms/lipid/modification'
+require 'mspire/lipid_maps'
+require 'mspire/lipid/search'
+require 'mspire/lipid/search/query'
+require 'mspire/lipid/modification'
 
-describe MS::Lipid::Search do
+describe Mspire::Lipid::Search do
   before do
-    @proton = MS::Lipid::Modification.new(:proton)
-    @h2o_loss = MS::Lipid::Modification.new(:water, :loss => true)
+    @proton = Mspire::Lipid::Modification.new(:proton)
+    @h2o_loss = Mspire::Lipid::Modification.new(:water, :loss => true)
   end
   describe 'searching a section of lipid maps' do
     before do
-      @lipids = MS::LipidMaps.parse_file(TESTFILES + '/lipidmaps_short.tsv')
+      @lipids = Mspire::LipidMaps.parse_file(TESTFILES + '/lipidmaps_short.tsv')
       @ions = @lipids.map do |lipid| 
         [[@proton], [@proton, @h2o_loss]].map do |mods|
-          MS::Lipid::Ion.new(lipid, mods)
+          Mspire::Lipid::Ion.new(lipid, mods)
         end
       end.flatten(1)
       @samples = Hash[ {
@@ -27,7 +27,7 @@ describe MS::Lipid::Search do
           [120, 220, 120, 220, 120]],
         :sample4 => [[187.157, 396.20, 244.30, 618.22, 933.01],
           [30, 33, 38, 99, 22]],
-      }.map {|key,data| [key, MS::Spectrum.new(data)] } ]
+      }.map {|key,data| [key, Mspire::Spectrum.new(data)] } ]
       @pretend_search_mzs = [187.157, 396.20, 244.30, 618.22, 933.01]
     end
 
@@ -44,7 +44,7 @@ describe MS::Lipid::Search do
     end
 
     xit 'searches mz values' do
-      searcher = MS::Lipid::Search.new(@ions, :query_min_count_per_bin => 8, :num_rand_samples_per_bin => 1000, :ppm => false)
+      searcher = Mspire::Lipid::Search.new(@ions, :query_min_count_per_bin => 8, :num_rand_samples_per_bin => 1000, :ppm => false)
       num_nearest_hits = 3
       (hit_groups, qvals) = searcher.search(@pretend_search_mzs, 3)
       p hit_groups.map(&:first).map(&:pvalue)
@@ -56,17 +56,17 @@ describe MS::Lipid::Search do
     before do
       # this will be specific to your install since it's not part of install
       path_to_lipidmaps_db = "#{ENV['HOME']}/tmp/tamil/lipidmaps_20120103_classes_1_2_3_4_5_6_7_8.exact_mass.tsv"
-      @lipids = MS::LipidMaps.parse_file(path_to_lipidmaps_db)
+      @lipids = Mspire::LipidMaps.parse_file(path_to_lipidmaps_db)
       @ions = @lipids.map do |lipid| 
         [[@proton], [@proton, @proton], [@proton, @h2o_loss]].map do |mods|
-          MS::Lipid::Search::Query.new(lipid, mods)
+          Mspire::Lipid::Search::Query.new(lipid, mods)
         end
       end.flatten(1)
       @pretend_search_mzs = [187.157, 396.20, 244.30, 618.22, 933.01]
     end
 
     it 'returns hit groups parallel with input m/zs' do
-      searcher = MS::Lipid::Search.new(@ions, :query_min_count_per_bin => 1000, :ppm => false)
+      searcher = Mspire::Lipid::Search.new(@ions, :query_min_count_per_bin => 1000, :ppm => false)
       hit_groups = searcher.search(@pretend_search_mzs, 3)
       best_hits = hit_groups.map(&:best_hit)
       best_hits.map {|hit| hit.observed_mz }.should == @pretend_search_mzs

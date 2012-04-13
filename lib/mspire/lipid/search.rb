@@ -1,12 +1,12 @@
-require 'ms/spectrum'
+require 'mspire/spectrum'
 require 'rserve/simpler'  # TODO: move to integrated interface with rserve when available
 require 'core_ext/array/in_groups'
-require 'ms/lipid/search/hit'
-require 'ms/lipid/search/bin'
-require 'ms/lipid/modification'
-require 'ms/lipid/search/probability_distribution'
+require 'mspire/lipid/search/hit'
+require 'mspire/lipid/search/bin'
+require 'mspire/lipid/modification'
+require 'mspire/lipid/search/probability_distribution'
 
-module MS
+module Mspire
   class Lipid
     class Search
       STANDARD_MODIFICATIONS = {
@@ -32,11 +32,11 @@ module MS
       # true
       def self.generate_simple_queries(lipids, mods=STANDARD_MODIFICATIONS, gain_and_loss=false)
         possible_lipids = []
-        real_mods_and_cnts = mods.map {|name, cnts| [MS::Lipid::Modification.new(name), cnts] }
+        real_mods_and_cnts = mods.map {|name, cnts| [Mspire::Lipid::Modification.new(name), cnts] }
         # one of each
         real_mods_and_cnts.each do |mod, counts|
           counts.each do |cnt|
-            possible_lipids << MS::Lipid::Search::Query.new(lipid, Array.new(cnt, mod))
+            possible_lipids << Mspire::Lipid::Search::Query.new(lipid, Array.new(cnt, mod))
           end
         end
         if gain_and_loss
@@ -52,7 +52,7 @@ module MS
         self.new(possible_lipids)
       end
 
-      # ions are MS::Lipid::Ion objects
+      # ions are Mspire::Lipid::Ion objects
       # each one should give a non-nil m/z value
       def initialize(ions=[], opts={})
         @options = STANDARD_SEARCH.merge(opts)
@@ -145,7 +145,7 @@ module MS
         mzs = [] ; query_groups = []
         pairs = ions.group_by(&:mz).sort_by(&:first)
         pairs.each {|mz, ar| mzs << mz ; query_groups << ar }
-        MS::Spectrum.new([mzs, query_groups])
+        Mspire::Spectrum.new([mzs, query_groups])
       end
 
       # use_ppm uses ppm or amu if false
@@ -185,15 +185,15 @@ module MS
           raise 'I think you need some data in your query spectrum!'
         when 1
           group = groups.first
-          [ MS::Lipid::Search::Bin.new( Range.new(group.first.first, group.last.first), db_isobar_spectrum ) ]
+          [ Mspire::Lipid::Search::Bin.new( Range.new(group.first.first, group.last.first), db_isobar_spectrum ) ]
         else
           search_bins = groups.each_cons(2).map do |points1, points2|
-            bin = MS::Lipid::Search::Bin.new( Range.new(points1.first.first, points2.first.first, true), db_isobar_spectrum )
+            bin = Mspire::Lipid::Search::Bin.new( Range.new(points1.first.first, points2.first.first, true), db_isobar_spectrum )
             prev = points2
             bin
           end
           _range = Range.new(prev.first.first, prev.last.first)
-          search_bins << MS::Lipid::Search::Bin.new(_range, db_isobar_spectrum) # inclusive
+          search_bins << Mspire::Lipid::Search::Bin.new(_range, db_isobar_spectrum) # inclusive
         end
       end
     end

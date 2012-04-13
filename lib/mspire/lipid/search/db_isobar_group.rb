@@ -1,5 +1,5 @@
 
-module MS
+module Mspire
   class Lipid
     class Search
       # this is a group of Lipid::Ion objects that all have the same (or

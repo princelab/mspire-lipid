@@ -1,9 +1,9 @@
 require 'spec_helper'
 
-require 'ms/lipid/modification'
+require 'mspire/lipid/modification'
 
-describe MS::Lipid::Modification do
-  Mod = MS::Lipid::Modification
+describe Mspire::Lipid::Modification do
+  Mod = Mspire::Lipid::Modification
 
   it 'can create common mods easily' do
     # water loss
@@ -35,7 +35,7 @@ describe MS::Lipid::Modification do
 
     mymod.formula = 'CH4'
     mymod.charge = 2
-    mymod.massdiff = MS::Lipid::Modification.massdiff(mymod.formula, mymod.charge)
+    mymod.massdiff = Mspire::Lipid::Modification.massdiff(mymod.formula, mymod.charge)
     mymod.massdiff.should be_within(1e4).of(16.030202)
   end
 end

@@ -1,12 +1,12 @@
 
-module MS
+module Mspire
   class Lipid
     # a lipid with modifications (typically the mods give it a charge so that
     # it can be seen in the mass spec)
     class Ion
-      # an MS::Lipid object
+      # an Mspire::Lipid object
       attr_accessor :lipid
-      # an MS::Lipid::Modifications object
+      # an Mspire::Lipid::Modifications object
       attr_accessor :modifications
       # the key attribute of a query
 

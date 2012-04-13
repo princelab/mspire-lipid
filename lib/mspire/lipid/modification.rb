@@ -1,6 +1,6 @@
-require 'ms/mass'
+require 'mspire/mass'
 
-module MS
+module Mspire
   class Lipid
 
 
@@ -27,9 +27,9 @@ module MS
       # electron is added.  If gain is false, then the mass diff will be
       # negative.
       def self.massdiff(formula, charge, gain=true)
-        MS::Mass.formula_to_exact_mass(formula)
-        massdiff = MS::Mass.formula_to_exact_mass(formula)
-        massdiff -= (charge * MS::Mass::ELECTRON) # + charge subtracts, - charge adds
+        Mspire::Mass.formula_to_exact_mass(formula)
+        massdiff = Mspire::Mass.formula_to_exact_mass(formula)
+        massdiff -= (charge * Mspire::Mass::ELECTRON) # + charge subtracts, - charge adds
         massdiff = -massdiff unless gain
         massdiff
       end
@@ -50,7 +50,7 @@ module MS
         :water => 0,
       }
 
-      # determined by running formulas through MS::Mass.massdiff
+      # determined by running formulas through Mspire::Mass.massdiff
       MASSDIFFS = {}
       FORMULAS.each do |name, formula|
          MASSDIFFS[name] = self.massdiff(formula, CHARGE[name])

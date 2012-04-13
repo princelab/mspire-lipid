@@ -1,7 +1,7 @@
-require 'ms/lipid'
-require 'ms/mass'
+require 'mspire/lipid'
+require 'mspire/mass'
 
-module MS
+module Mspire
   module LipidMaps
     # returns an array of Lipids
     # if high_res_mass is true (default), then the formula is used to calculate a higher
@@ -15,11 +15,11 @@ module MS
           nil
         else
           if seen_first_line
-            pieces[4] = MS::Mass.formula_to_exact_mass(pieces[3]) if high_res_mass
-            l = MS::Lipid.new *pieces
+            pieces[4] = Mspire::Mass.formula_to_exact_mass(pieces[3]) if high_res_mass
+            l = Mspire::Lipid.new *pieces
           else
             seen_first_line = true
-            warn "lipidmaps column headers are not right!" unless pieces.map(&:downcase) == MS::Lipid.members.map(&:to_s)
+            warn "lipidmaps column headers are not right!" unless pieces.map(&:downcase) == Mspire::Lipid.members.map(&:to_s)
             nil
           end
         end

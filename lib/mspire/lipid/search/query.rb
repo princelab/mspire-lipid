@@ -1,7 +1,7 @@
 
 
 
-module MS
+module Mspire
   class Lipid
     class Search
       class Query

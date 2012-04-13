@@ -1,6 +1,6 @@
-require 'bin'
+require 'mspire/bin'
 
-module MS
+module Mspire
   class Lipid
     class Search
 
@@ -8,7 +8,7 @@ module MS
       # (not just the portion covered by the range).  the query spectrum, and
       # a ProbabilityDistribution -- the probability that a peak's delta to
       # nearest peak is that small by chance.
-      class Bin < ::Bin
+      class Bin < Mspire::Bin
         # the intensity value of the query spectrum should be a query
         attr_accessor :db_spectrum
         attr_accessor :probability_distribution
@@ -22,7 +22,7 @@ module MS
           @data << query
         end
 
-        # returns the nearest num_hits MS::Lipid::Search::Hits sorted by delta
+        # returns the nearest num_hits Mspire::Lipid::Search::Hits sorted by delta
         # [with tie going to the lower m/z]
         # searches all queries and removes them from the data queue
         def queries_to_hit_groups!(num_hits=1)
