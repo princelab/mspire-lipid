@@ -1,3 +1,4 @@
+require 'mspire/lipid/ion/fragment'
 
 module Mspire
   class Lipid
@@ -14,6 +15,14 @@ module Mspire
         @lipid = lipid
         @modifications = mods
         @mz = nil
+      end
+
+      def charge
+        z = 0
+        @modifications.each do |mod|
+          z -= mod.charge
+        end
+        z
       end
 
       def mz
@@ -34,6 +43,7 @@ module Mspire
       def inspect
         "<|| Ion mz=#{mz} #{lipid.inspect} + #{modifications.map(&:inspect).join(', ')} ||>"
       end
+
     end
   end
 end

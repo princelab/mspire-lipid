@@ -2,13 +2,13 @@
 module Mspire
   class Lipid
     def self.members
-      [:lm_id,:common_name,:systematic_name,:formula,:mass,:category,:main_class,:sub_class]
+      [:lm_id,:common_name,:systematic_name,:formula,:mass,:category,:main_class,:sub_class,:smiles]
     end
 
     members.each {|mem| attr_accessor mem }
 
     def initialize(*args)
-      (@lm_id,@common_name,@systematic_name,@formula,@mass,@category,@main_class,@sub_class) = args
+      (@lm_id,@common_name,@systematic_name,@formula,@mass,@category,@main_class,@sub_class,@smiles) = args
     end
 
     def inspect

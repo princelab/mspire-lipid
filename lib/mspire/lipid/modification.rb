@@ -84,9 +84,13 @@ module Mspire
         @formula = opts[:formula] || FORMULAS[name]
         @massdiff = opts[:massdiff] || MASSDIFFS[name]
         @charge = opts[:charge] || CHARGE[name]
-        # necessary if you are using a named molecule and you want its loss
-        # rather than gain (i.e., you want a negative massdiff)
-        @massdiff = -@massdiff if opts[:loss]
+
+        if opts[:loss]
+          @charge = -@charge
+          # necessary if you are using a named molecule and you want its loss
+          # rather than gain (i.e., you want a negative massdiff)
+          @massdiff = -@massdiff 
+        end
       end
 
       def charged_formula
