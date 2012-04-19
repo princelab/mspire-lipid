@@ -7,7 +7,7 @@ require 'rspec'
 Dir["#{File.dirname(__FILE__)}/support/**/*.rb"].each {|f| require f}
 
 RSpec.configure do |config|
-  
+  config.formatter = :documentation  
 end
 
 TESTFILES = File.expand_path(File.join(File.dirname(__FILE__), "testfiles"))
