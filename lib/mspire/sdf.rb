@@ -37,14 +37,14 @@ module Mspire
       :p => 5, # 3 ??
     }
 
-    Atom = Struct.new(:element, :bonds, :coordinates, :valence) do
+    Atom = Struct.new(:element, :atoms, :coordinates, :valence) do
       # element should be all lowercase symbol
-      def initialize(_element=:h, _bonds=[], _coordinates=Vector[0.0, 0.0, 0.0], _valence=nil)
-        super( _element, _bonds, _coordinates, _valence || COMMON_VALENCE[_element])
+      def initialize(_element=:h, _atoms=[], _coordinates=Vector[0.0, 0.0, 0.0], _valence=nil)
+        super( _element, _atoms, _coordinates, _valence || COMMON_VALENCE[_element])
       end
 
       def inspect
-        "#<struct #{self.class} element=#{element.inspect}, bonds=#{bonds.inspect}, coordinates=#{coordinates.inspect}, valence=#{valence.inspect}>"
+        "#<struct #{self.class} element=#{element.inspect}, atoms.size=#{atoms.size}, coordinates=#{coordinates.inspect}, valence=#{valence.inspect}>"
       end
     end
 
@@ -94,6 +94,7 @@ module Mspire
         Atom.new(data[3].downcase.to_sym, [], Coordinate[*data[0,3].map(&:to_f)])
       end
       atom_index_to_bonds = Hash.new {|h,k| h[k] = [] }
+
       @bonds = lines[num_atoms+4,num_bonds].map do |line|
         data = line.split(/\s+/).map(&:to_i)
 
@@ -107,8 +108,13 @@ module Mspire
         end
         bond
       end
+
       atom_index_to_bonds.each do |atom_i, bonds|
-        @atoms[atom_i].bonds = bonds
+        atom = @atoms[atom_i]
+        bonds.each do |bond|
+          bond.atoms.delete(atom)
+          @atoms[atom_i].atoms << bond.atoms.first
+        end
       end
       self
     end
