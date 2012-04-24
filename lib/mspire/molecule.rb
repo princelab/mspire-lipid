@@ -3,13 +3,21 @@ require 'mspire/molecular_formula'
 
 module Mspire
   class Molecule
+
     # an array of atoms that know how they are bound together
     attr_accessor :atoms
-    attr_accessor :charge
 
-    def initialize(atoms=[], charge=0)
+    # charge that is not localized to a particular atom
+    attr_accessor :delocalized_charge
+
+    def initialize(atoms=[], delocalized_charge=0)
       @atoms = atoms
-      @charge = charge
+      @delocalized_charge = delocalized_charge
+    end
+
+    # sum of the charge on individual atoms + any delocalized charge
+    def charge
+      atoms.reduce(0) {|sum,atom| sum + atom.charge } + delocalized_charge
     end
 
     def self.from_lipidmaps_sdf_string(sdf_string)
@@ -17,16 +25,23 @@ module Mspire
       self.new( sdf.atoms )
     end
 
-    def molecular_formula
+    # if fill_valence is nil, then no extra atoms are intuited.
+    def molecular_formula(fill_valence=:h)
       mf = Hash.new {|h,k| h[k] = 0 }
+      _charge = 0
       atoms.each do |atom|
+        # calculate the charge during the determination of elements 
+        _charge += atom.charge
         mf[atom.element] += 1
+        if fill_valence
+          mf[fill_valence] += (1 * atom.empty_bonds)
+        end
       end
-      Mspire::MolecularFormula.new( mf, charge )
+      Mspire::MolecularFormula.new( mf, _charge + @delocalized_charge )
     end
 
-    def mass
-      molecular_formula.mass
+    def mass(fill_valence=:h)
+      molecular_formula(fill_valence).mass
     end
 
   end

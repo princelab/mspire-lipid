@@ -25,6 +25,13 @@ module Mspire
         z
       end
 
+      def formula
+        formula = lipid.formula.dup
+        mods.each do |mod|
+          formula += mod
+        end
+      end
+
       def mz
         return @mz if @mz
         mass = @lipid.mass

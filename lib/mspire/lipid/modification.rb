@@ -76,9 +76,13 @@ module Mspire
       #     :charge = +/- Integer
       #
       #     instruction:
-      #     :loss = true   flips the mass diff sign during initialization
-      #                    necessary to get negative massdiff on named molecule
-      #                    (unnecessary if you input massdiff manually)
+      #     :loss = true   negates the mass diff sign and charge during initialization
+      #                    this option is typically only done for molecules
+      #                    already present in the FORMULA hash (e.g.)
+      #
+      #     proton_loss = Mspire::Lipid::Modification.new(:proton, :loss => true)
+      #     water_loss = Mspire::Lipid::Modification.new(:water, :loss => true)
+      #
       def initialize(name, opts={})
         @name = name
         @formula = opts[:formula] || FORMULAS[name]

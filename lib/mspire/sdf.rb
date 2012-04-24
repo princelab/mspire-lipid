@@ -37,24 +37,57 @@ module Mspire
       :p => 5, # 3 ??
     }
 
-    Atom = Struct.new(:element, :atoms, :coordinates, :valence) do
+    Atom = Struct.new(:element, :bonds, :coordinates, :valence) do
       # element should be all lowercase symbol
-      def initialize(_element=:h, _atoms=[], _coordinates=Vector[0.0, 0.0, 0.0], _valence=nil)
-        super( _element, _atoms, _coordinates, _valence || COMMON_VALENCE[_element])
+      def initialize(_element=:h, _bonds=[], _coordinates=Vector[0.0, 0.0, 0.0], _valence=nil)
+        super( _element, _bonds, _coordinates, _valence || COMMON_VALENCE[_element])
+      end
+
+      # returns valence - bonds.size
+      def empty_bonds
+        valence - bonds.size
+      end
+
+      # if break_count is nil, breaks every bond between the atoms, otherwise
+      # breaks break_count number of bonds between the atoms.  Returns the
+      # number of bonds broken.
+      def break(other_atom, break_count=nil)
+        break_count ||= 1e10 
+        new_bonds = []
+        cnt = 0
+        bonds.each do |bond|
+          if bond.include?(other_atom)
+            cnt += 1
+          else
+            new_bonds << bond
+          end
+        end
+        bonds.replace(new_bonds)
+        cnt
+      end
+
+      # returns self
+      def add(other_atom, bond_cnt=1)
+        bond = Bond.new([self, other_atom], bond_cnt)
+        self.bonds << bond
+        other_atom.bonds << bond
+        self
       end
 
       def inspect
-        "#<struct #{self.class} element=#{element.inspect}, atoms.size=#{atoms.size}, coordinates=#{coordinates.inspect}, valence=#{valence.inspect}>"
+        "#<struct #{self.class} element=#{element.inspect}, bonds.size=#{bonds.size}, coordinates=#{coordinates.inspect}, valence=#{valence.inspect}>"
       end
     end
 
-    Bond = Struct.new(:atoms, :type) do
-      def initialize(_atoms=[], _type=1)
-        super(_atoms, _type)
+    class Bond < Array
+      # count is the type of bond (1 single, 2 double, etc)
+      def initialize(atoms=[], count=1)
+        super(_atoms)
+        @count = count
       end
 
       def smiles_type
-        case type
+        case count
         when 1
           '-'
         when 2
@@ -67,7 +100,7 @@ module Mspire
       end
 
       def inspect
-        "<#{atoms.map(&:object_id).join('--')} (#{atoms.map(&:element).join(smiles_type)})>"
+        "<#{self.map(&:object_id).join('--')} (#{self.map(&:element).join(smiles_type)})>"
       end
     end
 

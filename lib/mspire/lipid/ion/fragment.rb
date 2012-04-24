@@ -59,9 +59,7 @@ module Mspire
       module Fragment
         # predicts the MS/MS fragments for this ion
         def predict_fragment_mzs
-          lipid.smiles
         end
-
       end
 
       include Fragment

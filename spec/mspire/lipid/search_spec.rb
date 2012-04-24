@@ -12,7 +12,7 @@ describe Mspire::Lipid::Search do
   end
   describe 'searching a section of lipid maps' do
     before do
-      @lipids = Mspire::LipidMaps.parse_file(TESTFILES + '/lipidmaps_short.tsv')
+      @lipids = Mspire::LipidMaps.parse_file(TESTFILES + '/lipidmaps_programmatic_short.tsv')
       @ions = @lipids.map do |lipid| 
         [[@proton], [@proton, @h2o_loss]].map do |mods|
           Mspire::Lipid::Ion.new(lipid, mods)
