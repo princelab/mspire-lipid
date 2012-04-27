@@ -10,9 +10,14 @@ module Mspire
     # charge that is not localized to a particular atom
     attr_accessor :delocalized_charge
 
-    def initialize(atoms=[], delocalized_charge=0)
+    # the element used to fill any remaining valence locations (typically
+    # hydrogen (:h))
+    attr_accessor :fill_valence
+
+    def initialize(atoms=[], delocalized_charge=0, fill_valence=:h)
       @atoms = atoms
       @delocalized_charge = delocalized_charge
+      @fill_valence = fill_valence
     end
 
     # sum of the charge on individual atoms + any delocalized charge
@@ -26,7 +31,7 @@ module Mspire
     end
 
     # if fill_valence is nil, then no extra atoms are intuited.
-    def molecular_formula(fill_valence=:h)
+    def molecular_formula
       mf = Hash.new {|h,k| h[k] = 0 }
       _charge = 0
       atoms.each do |atom|
@@ -40,8 +45,8 @@ module Mspire
       Mspire::MolecularFormula.new( mf, _charge + @delocalized_charge )
     end
 
-    def mass(fill_valence=:h)
-      molecular_formula(fill_valence).mass
+    def mass
+      molecular_formula.mass
     end
 
   end

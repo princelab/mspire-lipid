@@ -3,6 +3,16 @@ require 'spec_helper'
 require 'mspire/molecule'
 
 describe Mspire::Molecule do
+
+  describe 'simple molecule' do
+    it 'is a collection of atoms' do
+      at = Mspire::Atom
+    end
+
+
+
+  end
+
   describe 'creating from lipidmaps sdf string' do
 
     before(:all) do
