@@ -31,7 +31,6 @@ bond_triplets = []
   end
 end
 
-
 (1..obmol.num_atoms).each do |i|
   atom = obmol.get_atom(i)
   if atom.matches_smarts("C(=O)CC")
