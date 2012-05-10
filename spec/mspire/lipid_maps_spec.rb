@@ -2,6 +2,11 @@ require 'spec_helper'
 
 require 'mspire/lipid_maps'
 require 'mspire/molecular_formula'
+HAVE_RUBABEL = 
+begin
+  require 'rubabel' ; true
+rescue ; false
+end
 
 describe Mspire::LipidMaps do
   describe 'parsing programmatically downloaded files' do
@@ -43,8 +48,10 @@ describe Mspire::LipidMaps do
         ll.formula[:c].should == 22  # <- frozen
         if file =~ /_sd_/
           ll.structure.include?('25 24  0  0  0  0  0  0  0  0999 V2000').should be_true
-          lipids = Mspire::LipidMaps.parse_file(file, :sdf_objects => true)
-          lipids.last.structure.should be_a(Mspire::Molecule)
+          if HAVE_RUBABEL
+            lipids = Mspire::LipidMaps.parse_file(file, :rubabel_molecules => true)
+            lipids.last.structure.should be_a(Rubabel::Molecule)
+          end
         else
           ll.structure.should be_nil
         end

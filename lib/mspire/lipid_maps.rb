@@ -1,13 +1,12 @@
 require 'mspire/lipid'
 require 'mspire/mass'
-require 'mspire/molecule'
 
 module Mspire
   module LipidMaps
 
     DEFAULTS = {
       :high_res_mass => true,
-      :sdf_objects => false,
+      :rubabel_molecules => false,
       :molecular_formula_objects => true,
     }
 
@@ -17,6 +16,7 @@ module Mspire
     #
     #     :high_res_mass => true (ensures that a high res mass is present or calculated)
     def self.parse_file(lipidmaps_tsv, opts={})
+      require 'rubabel' if opts[:rubabel_molecules]
 
       opts = DEFAULTS.merge(opts)
 
@@ -66,7 +66,7 @@ module Mspire
         end
       end.compact
 
-      if opts.values_at(:molecular_formula_objects, :sdf_objects).any? || (opts[:high_res_mass] && lm_ft == :programmatic)
+      if opts.values_at(:molecular_formula_objects, :rubabel_molecules).any? || (opts[:high_res_mass] && lm_ft == :programmatic)
         lipids.each do |lipid|
           if opts[:molecular_formula_objects]
             lipid.formula = Mspire::MolecularFormula.new(lipid.formula)
@@ -74,8 +74,8 @@ module Mspire
           if lm_ft == :programmatic && opts[:high_res_mass]
             lipid.mass = Mspire::Mass.formula_to_exact_mass(lipid.formula)
           end
-          if opts[:sdf_objects]
-            lipid.structure = Mspire::Molecule.from_lipidmaps_sdf_string(lipid.structure)
+          if opts[:rubabel_molecules]
+            lipid.structure = Rubabel::Molecule.from_string(lipid.structure.gsub('|', "\n"), :sdf)
           end
         end
       end

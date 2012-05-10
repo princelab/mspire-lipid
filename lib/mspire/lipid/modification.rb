@@ -40,7 +40,7 @@ module Mspire
       # protons with a total of 2 charges)
       FORMULAS = {
         :proton => 'H',
-        :ammonium => 'NH3H',
+        :ammonium => 'NH4',
         :lithium => 'Li',
         :water => 'H2O',
       }
@@ -87,7 +87,10 @@ module Mspire
       #
       def initialize(name, opts={})
         @name = name
-        @formula = Mspire::MolecularFormula.new( opts[:formula] || FORMULAS[name] )
+        @formula = 
+          if ( form_string = (opts[:formula] || FORMULAS[name]) )
+            Mspire::MolecularFormula.new( form_string )
+          end
         @massdiff = opts[:massdiff] || MASSDIFFS[name]
         @charge = opts[:charge] || CHARGE[name]
 

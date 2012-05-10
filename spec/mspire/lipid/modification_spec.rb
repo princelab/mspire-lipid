@@ -24,7 +24,7 @@ describe Mspire::Lipid::Modification do
     ammon.gain?.should be_true
     ammon.massdiff.>(0).should be_true
     ammon.charge.should == 1
-    ammon.charged_formula.should == 'NH3H+'
+    ammon.charged_formula.should == 'H4N+'
   end
 
   it 'can create custom mods' do

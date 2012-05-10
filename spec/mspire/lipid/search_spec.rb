@@ -65,7 +65,7 @@ describe Mspire::Lipid::Search do
       @pretend_search_mzs = [187.157, 396.20, 244.30, 618.22, 933.01]
     end
 
-    it 'returns hit groups parallel with input m/zs' do
+    xit 'returns hit groups parallel with input m/zs' do
       searcher = Mspire::Lipid::Search.new(@ions, :query_min_count_per_bin => 1000, :ppm => false)
       hit_groups = searcher.search(@pretend_search_mzs, 3)
       best_hits = hit_groups.map(&:best_hit)
