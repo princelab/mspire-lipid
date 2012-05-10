@@ -27,9 +27,10 @@ module Mspire
 
       def formula
         formula = lipid.formula.dup
-        mods.each do |mod|
-          formula += mod
+        modifications.each do |mod|
+          formula += mod.formula
         end
+        formula
       end
 
       def mz

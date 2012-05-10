@@ -1,4 +1,5 @@
 require 'mspire/mass'
+require 'mspire/molecular_formula'
 
 module Mspire
   class Lipid
@@ -58,7 +59,7 @@ module Mspire
 
       # as a symbol
       attr_accessor :name
-      # as a molecular formula
+      # as a MolecularFormula object
       attr_accessor :formula
       # negative indicates a loss
       attr_accessor :massdiff
@@ -71,7 +72,8 @@ module Mspire
       # CHARGE, or MASSDIFFS hashes:
       #
       #     attributes:
-      #     :formula = the chemical formula, lipidmaps style ("C2H4BrO")
+      #     :formula = the chemical formula, lipidmaps style ("C2H4BrO") or
+      #                any valid argument to MolecularFormula.new
       #     :massdiff = +/-Float
       #     :charge = +/- Integer
       #
@@ -85,7 +87,7 @@ module Mspire
       #
       def initialize(name, opts={})
         @name = name
-        @formula = opts[:formula] || FORMULAS[name]
+        @formula = Mspire::MolecularFormula.new( opts[:formula] || FORMULAS[name] )
         @massdiff = opts[:massdiff] || MASSDIFFS[name]
         @charge = opts[:charge] || CHARGE[name]
 
@@ -98,7 +100,7 @@ module Mspire
       end
 
       def charged_formula
-        @formula + @charge.abs.times.map { (@charge > 0) ? '+' : '-' }.join
+        @formula.to_s + @charge.abs.times.map { (@charge > 0) ? '+' : '-' }.join
       end
 
       def gain?
