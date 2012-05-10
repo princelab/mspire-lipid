@@ -105,10 +105,12 @@ actual_mzs.each do |exp_mz|
   starting_i = range.begin if opts[:lower_bound]
   
   closest = ions[range].sort_by {|ion| [(ion.mz - exp_mz).abs, ion.mz] }
+  row = [exp_mz]
   closest[0,opts[:top_n]].each_with_index do |ion,i|
     rank = i + 1
     ppm = ((exp_mz - ion.mz) / ion.mz) * 1e6
     lipid = ion.lipid
-    puts [exp_mz, rank, ppm, ppm.abs, lipid.category, lipid.lm_id, lipid.common_name, ion.modifications.map(&:charged_formula).join(", ")].join("\t")
+    row.push( rank, ppm, ppm.abs, lipid.category, lipid.lm_id, lipid.common_name, ion.modifications.map(&:charged_formula).join(", ") )
   end
+  puts row.join("\t")
 end
