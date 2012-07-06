@@ -15,17 +15,25 @@ end
 describe Mspire::Lipid::Ion do
 
   before do
-    lipid = Mspire::Lipid.new
-    lipid.mass = 300.2
+    lipid = Mspire::Lipid.new("LMGP02010009", "PE(16:0/18:1(9Z))", "1-hexadecanoyl-2-(9Z-octadecenoyl)-sn-glycero-3-phosphoethanolamine", 'C39H76NO8P', 717.5308, 'Glycerophospholipids [GP]', 'Glycerophosphoethanolamines [GP02]', 'Diacylglycerophosphoethanolamines [GP0201]', '7850611', 'FHQVHHIBKUMWTI-OTMQOFQLSA-N')
     proton = Mspire::Lipid::Modification.new(:proton)
+    proton_loss = Mspire::Lipid::Modification.new(:proton, :loss => true)
     h2o_loss = Mspire::Lipid::Modification.new(:water, :loss => true)
-    @plus1 = Mspire::Lipid::Ion.new(lipid, [proton, h2o_loss])
-    @plus2 = Mspire::Lipid::Ion.new(lipid, [proton, proton, h2o_loss])
+    @plus1_less_h20 = Mspire::Lipid::Ion.new(lipid, [proton, h2o_loss])
+    @plus2_less_h20 = Mspire::Lipid::Ion.new(lipid, [proton, proton, h2o_loss])
+    @minus1_less_h20 = Mspire::Lipid::Ion.new(lipid, [proton_loss, h2o_loss])
   end
 
   it 'calculates the correct m/z' do
-    @plus1.mz.should be_within(1e5).of(283.196711735)
-    @plus2.mz.should be_within(1e5).of(142.101994085)
+    @plus1_less_h20.mz.should be_within(1e-5).of(700.52751178307)
+    @plus2_less_h20.mz.should be_within(1e-5).of(350.76739412492003)
+    @minus1_less_h20.mz.should be_within(1e-5).of(698.5129588842301)
+  end
+
+  it 'calculates the correct formula' do
+    @plus1_less_h20.formula.to_s.should == 'C39H75NO8P'
+    #p @plus2_less_h20.formula.to_s.should == 
+    #p @minus1_less_h20.formula.to_s.should == 
   end
 
   describe 'predicting ms/ms fragments' do

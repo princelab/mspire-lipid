@@ -1,4 +1,5 @@
 require 'mspire/lipid/ion/fragment'
+require 'mspire/molecular_formula'
 
 module Mspire
   class Lipid
@@ -26,14 +27,17 @@ module Mspire
       end
 
       def formula
-        formula = lipid.formula.dup
+        _formula = @lipid.formula
+        _formula = Mspire::MolecularFormula.new(_formula) unless _formula.is_a?(Mspire::MolecularFormula)
         modifications.each do |mod|
-          formula += mod.formula
+          p mod.formula
+          _formula += mod.formula
         end
-        formula
+        _formula
       end
 
-      def mz
+      # value is cached
+      def mz_signed
         return @mz if @mz
         mass = @lipid.mass
         charge = 0
@@ -46,6 +50,12 @@ module Mspire
         else
           @mz = mass / charge
         end
+      end
+
+      # the unsigned m/z value
+      def mz
+        _mz_signed = mz_signed
+        _mz_signed >= 0 ? _mz_signed : -_mz_signed
       end
 
       def inspect
