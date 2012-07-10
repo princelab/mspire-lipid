@@ -1,5 +1,8 @@
 #!/usr/bin/env ruby
 
+puts "under development"
+
+=begin
 require 'trollop'
 require 'ms/mzml'
 require 'ms/lipid/search'
@@ -197,3 +200,4 @@ files.each do |file|
     end
   end
 end
+=end
