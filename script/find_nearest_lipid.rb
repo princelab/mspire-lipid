@@ -14,11 +14,11 @@ parser = Trollop::Parser.new do
   opt :top_n, "how many closest ions to print", :default => 3
   banner ""
   text "modifications: (at least 1 charged mod is required)"
-  opt :lithium, "search for lithium adducts"
-  opt :ammonium, "search for ammonium adducts"
-  opt :proton_gain, "search for proton gain"
-  opt :proton_loss, "search for proton loss"
-  opt :water_loss, "if used, *all* mods are also considered with water loss"
+  opt :lithium, "search for i down to 1 lithium adducts", :default => 0
+  opt :ammonium, "search for i down to 1 ammonium adducts", :default => 0
+  opt :proton_gain, "search for i down to 1 proton additions", :default => 0
+  opt :proton_loss, "search for i down to 1 proton losses", :default => 0
+  opt :water_loss, "if used, *all* mods are also considered with i down to 0 water losses", :default => 0
   opt :textfile, "a text file with m/z values, one per line", :type => String
   opt :lower_bound, "use lower bound searching (requires m/z's to be in sorted order)"
   opt :sort, "sorts the m/z's"
@@ -33,7 +33,7 @@ end
 
 CHARGED_MODS = [:lithium, :ammonium, :proton_gain, :proton_loss]
 
-unless CHARGED_MODS.any? {|key| opts[key] }
+unless CHARGED_MODS.any? {|key| opts[key] > 0 }
   puts "*" * 78
   puts "ArgumentError: need at least one charged mod!"
   puts "*" * 78
@@ -44,8 +44,10 @@ end
 (lipidmaps, *actual_mzs) = ARGV
 
 if f=opts[:textfile]
-  actual_mzs = IO.readlines(f).map(&:chomp).map(&:to_f)
+  actual_mzs = IO.readlines(f).map(&:chomp)
 end
+
+actual_mzs.map!(&:to_f)
 
 unless actual_mzs.size > 0
   STDERR.puts "NO m/z values given!!!"
@@ -55,14 +57,14 @@ end
 
 $VERBOSE = opts[:verbose]
 
-MSLM = Mspire::Lipid::Modification
+LipidMod = Mspire::Lipid::Modification
 
 mods = {
-  proton_gain: MSLM.new(:proton),
-  water_loss: MSLM.new(:water, :loss => true),
-  lithium: MSLM.new(:lithium),
-  ammonium: MSLM.new(:ammonium),
-  proton_loss: MSLM.new(:proton, :loss => true)
+  proton_gain: LipidMod.new(:proton),
+  water_loss: LipidMod.new(:water, :loss => true),
+  lithium: LipidMod.new(:lithium),
+  ammonium: LipidMod.new(:ammonium),
+  proton_loss: LipidMod.new(:proton, :loss => true)
 }
 
 lipids = Mspire::LipidMaps.parse_file(lipidmaps)
@@ -70,10 +72,12 @@ lipids = Mspire::LipidMaps.parse_file(lipidmaps)
 ions = []
 lipids.each do |lipid| 
   CHARGED_MODS.each do |key|
-    if opts[key]
-      ions << Mspire::Lipid::Ion.new(lipid, [mods[key]])
-      if opts[:water_loss]
-        ions << Mspire::Lipid::Ion.new(lipid, [mods[key], mods[:water_loss]]) 
+    if opts[key] > 0
+      opts[key].downto(1) do |num_charge_mod|
+        mods_to_use = [mods[key]] * num_charge_mod
+        opts[:water_loss].downto(0) do |i|
+          ions << Mspire::Lipid::Ion.new(lipid, mods_to_use + ([mods[:water_loss]]*i)) 
+        end
       end
     end
   end
