@@ -59,7 +59,7 @@ module Mspire
 
       # as a symbol
       attr_accessor :name
-      # as a MolecularFormula object
+      # a MolecularFormula object
       attr_accessor :formula
       # negative indicates a loss
       attr_accessor :massdiff
@@ -73,7 +73,7 @@ module Mspire
       #
       #     attributes:
       #     :formula = the chemical formula, lipidmaps style ("C2H4BrO") or
-      #                any valid argument to MolecularFormula.new
+      #                any valid argument to MolecularFormula.from_any
       #     :massdiff = +/-Float
       #     :charge = +/- Integer
       #
@@ -89,7 +89,7 @@ module Mspire
         @name = name
         @formula = 
           if ( form_string = (opts[:formula] || FORMULAS[name]) )
-            Mspire::MolecularFormula.new( form_string )
+            Mspire::MolecularFormula.from_any( form_string )
           end
         @massdiff = opts[:massdiff] || MASSDIFFS[name]
         @charge = opts[:charge] || CHARGE[name]
@@ -102,9 +102,11 @@ module Mspire
         end
       end
 
-      def charged_formula
+      def charged_formula_string
         @formula.to_s + @charge.abs.times.map { (@charge > 0) ? '+' : '-' }.join
       end
+
+      alias_method :to_s, :charged_formula_string
 
       def gain?
         massdiff > 0
@@ -115,7 +117,7 @@ module Mspire
       end
 
       def inspect
-        "<Mod: #{charged_formula}>"
+        "<Mod: #{to_s}>"
       end
 
     end

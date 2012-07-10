@@ -110,7 +110,7 @@ actual_mzs.each do |exp_mz|
     rank = i + 1
     ppm = ((exp_mz - ion.mz) / ion.mz) * 1e6
     lipid = ion.lipid
-    row.push( rank, ppm, ppm.abs, lipid.category, lipid.lm_id, lipid.common_name, ion.modifications.map(&:charged_formula).join(", ") )
+    row.push( rank, ppm, ppm.abs, lipid.category, lipid.lm_id, lipid.common_name, ion.modifications.map(&:charged_formula_string).join(", ") )
   end
   puts row.join("\t")
 end

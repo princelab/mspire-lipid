@@ -21,17 +21,21 @@ module Mspire
       def charge
         z = 0
         @modifications.each do |mod|
-          z -= mod.charge
+          z += mod.charge
         end
         z
       end
 
+      # a MolecularFormula object
       def formula
         _formula = @lipid.formula
-        _formula = Mspire::MolecularFormula.new(_formula) unless _formula.is_a?(Mspire::MolecularFormula)
+        _formula = Mspire::MolecularFormula.from_any(_formula) unless _formula.is_a?(Mspire::MolecularFormula)
         modifications.each do |mod|
-          p mod.formula
-          _formula += mod.formula
+          if mod.gain?
+            _formula += mod.formula 
+          else
+            _formula -= mod.formula
+          end
         end
         _formula
       end

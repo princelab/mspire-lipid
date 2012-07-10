@@ -14,7 +14,7 @@ describe Mspire::Lipid::Modification do
       water_loss.loss?.should be_true
       water_loss.massdiff.<(0).should be_true
       water_loss.charge.should == 0
-      water_loss.charged_formula.should == 'H2O'
+      water_loss.charged_formula_string.should == 'H2O'
     end
 
     it 'proton gain' do
@@ -22,10 +22,7 @@ describe Mspire::Lipid::Modification do
       prot.gain?.should be_true
       prot.massdiff.>(0).should be_true
       prot.charge.should == 1
-      prot.charged_formula.should == 'H+'
-      ion = Mspire::Lipid::Ion.new(@lipid, [prot])
-      p ion.formula
-      p ion.mass
+      prot.charged_formula_string.should == 'H+'
     end
 
     it 'proton loss' do
@@ -34,10 +31,7 @@ describe Mspire::Lipid::Modification do
       prot_loss.loss?.should be_true
       prot_loss.massdiff.<(0).should be_true
       prot_loss.charge.should == -1
-      prot_loss.charged_formula.should == 'H-'
-      ion = Mspire::Lipid::Ion.new(@lipid, [prot_loss])
-      p ion.formula
-      p ion.mass
+      prot_loss.charged_formula_string.should == 'H-'
     end
 
     it 'ammonium gain' do
@@ -45,7 +39,7 @@ describe Mspire::Lipid::Modification do
       ammon.gain?.should be_true
       ammon.massdiff.>(0).should be_true
       ammon.charge.should == 1
-      ammon.charged_formula.should == 'H4N+'
+      ammon.charged_formula_string.should == 'H4N+'
     end
   end
 

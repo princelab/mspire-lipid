@@ -1,6 +1,5 @@
 require 'spec_helper'
 
-
 require 'mspire/lipid'
 require 'mspire/lipid/modification'
 require 'mspire/lipid/ion'
@@ -31,9 +30,13 @@ describe Mspire::Lipid::Ion do
   end
 
   it 'calculates the correct formula' do
-    @plus1_less_h20.formula.to_s.should == 'C39H75NO8P'
-    #p @plus2_less_h20.formula.to_s.should == 
-    #p @minus1_less_h20.formula.to_s.should == 
+    @plus1_less_h20.formula.to_s.should == "C39H75NO7P"
+    @plus1_less_h20.charge.should == 1
+
+    @plus2_less_h20.formula.to_s.should == "C39H76NO7P"
+    @plus2_less_h20.charge.should == 2
+    @minus1_less_h20.formula.to_s.should == "C39H73NO7P"
+    @minus1_less_h20.charge.should == -1
   end
 
   describe 'predicting ms/ms fragments' do
@@ -51,7 +54,8 @@ describe Mspire::Lipid::Ion do
         mzs.sort.should == frags.sort
       end
 
-      it '11-methyl-9S-hydroxy-13E-hexadecenoic acid' do
+      # WORKING THIS GUY OUT!!!!!!
+      xit '11-methyl-9S-hydroxy-13E-hexadecenoic acid' do
         lipid = Mspire::Lipid.new(nil, 'Made Up', '11-methyl-9S-hydroxy-13E-hexadecenoic acid',	'C17H32O3', 284.23514488492003, 'Fatty Acyls [FA]', 'Fatty Acids and Conjugates [FA01]', 'Branched fatty acids [FA0102]')
         ion = Mspire::Lipid::Ion.new(lipid, [MSS::PROTON_LOSS])
 
@@ -77,7 +81,6 @@ describe Mspire::Lipid::Ion do
         frags << frag1 - (MSS::H2O + MSS::CO2)
 
         mzs = ion.predict_fragment_mzs
-        p mzs
         #mzs.sort.should == frags.sort
       end
 

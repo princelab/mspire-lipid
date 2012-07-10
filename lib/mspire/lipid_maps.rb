@@ -69,7 +69,7 @@ module Mspire
       if opts.values_at(:molecular_formula_objects, :rubabel_molecules).any? || (opts[:high_res_mass] && lm_ft == :programmatic)
         lipids.each do |lipid|
           if opts[:molecular_formula_objects]
-            lipid.formula = Mspire::MolecularFormula.new(lipid.formula)
+            lipid.formula = Mspire::MolecularFormula.from_string(lipid.formula)
           end
           if lm_ft == :programmatic && opts[:high_res_mass]
             lipid.mass = Mspire::Mass.formula_to_exact_mass(lipid.formula)

@@ -1,3 +1,5 @@
+
+=begin
 require 'spec_helper'
 
 require 'mspire/lipid_maps'
@@ -77,3 +79,4 @@ describe Mspire::Lipid::Search do
   end
 
 end
+=end
