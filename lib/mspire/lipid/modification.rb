@@ -42,12 +42,14 @@ module Mspire
         :proton => 'H',
         :ammonium => 'NH4',
         :lithium => 'Li',
+        :sodium => 'Na',
         :water => 'H2O',
       }
       CHARGE = {
         :proton => 1,
         :ammonium => 1,
         :lithium => 1,
+        :sodium=> '1',
         :water => 0,
       }
 

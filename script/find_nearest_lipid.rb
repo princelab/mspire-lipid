@@ -15,6 +15,7 @@ parser = Trollop::Parser.new do
   banner ""
   text "modifications: (at least 1 charged mod is required)"
   opt :lithium, "search for i down to 1 lithium adducts", :default => 0
+  opt :sodium, "search for i down to 1 sodium adducts", :default => 0
   opt :ammonium, "search for i down to 1 ammonium adducts", :default => 0
   opt :proton_gain, "search for i down to 1 proton additions", :default => 0
   opt :proton_loss, "search for i down to 1 proton losses", :default => 0
@@ -31,7 +32,7 @@ if ARGV.size == 0
   exit
 end
 
-CHARGED_MODS = [:lithium, :ammonium, :proton_gain, :proton_loss]
+CHARGED_MODS = [:lithium, :sodium, :ammonium, :proton_gain, :proton_loss]
 
 unless CHARGED_MODS.any? {|key| opts[key] > 0 }
   puts "*" * 78
@@ -63,6 +64,7 @@ mods = {
   proton_gain: LipidMod.new(:proton),
   water_loss: LipidMod.new(:water, :loss => true),
   lithium: LipidMod.new(:lithium),
+  sodium: LipidMod.new(:sodium),
   ammonium: LipidMod.new(:ammonium),
   proton_loss: LipidMod.new(:proton, :loss => true)
 }
