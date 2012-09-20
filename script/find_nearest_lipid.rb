@@ -87,7 +87,7 @@ lipids.each do |lipid|
         mods_to_use = [mods[key]] * num_charge_mod
         UNCHARGED_MODS.each do |umod|
           opts[umod].downto(0) do |i|
-            ions << Mspire::Lipid::Ion.new(lipid, mods_to_use + ([mods[:umod]]*i)) 
+            ions << Mspire::Lipid::Ion.new(lipid, mods_to_use + ([mods[umod]]*i)) 
           end
         end
       end
