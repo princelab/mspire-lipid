@@ -13,7 +13,7 @@ Jeweler::Tasks.new do |gem|
   gem.description = %Q{does lipidomics}
   gem.email = "jtprince@gmail.com"
   gem.authors = ["John T. Prince"]
-  gem.add_dependency "mspire", "~> 0.8.3"
+  gem.add_dependency "mspire", "~> 0.8.4"
   gem.add_development_dependency "rubabel", ">= 0.1.6"
   gem.add_development_dependency "rspec", "~> 2.3.0"
   gem.add_development_dependency "jeweler", "~> 1.6.4"
