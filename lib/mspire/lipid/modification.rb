@@ -44,13 +44,17 @@ module Mspire
         :lithium => 'Li',
         :sodium => 'Na',
         :water => 'H2O',
+        :ammonia => 'NH3',
+        :carbon_dioxide => 'CO2',
       }
       CHARGE = {
         :proton => 1,
         :ammonium => 1,
         :lithium => 1,
-        :sodium=> '1',
+        :sodium=> 1,
         :water => 0,
+        :ammonia => 0,
+        :carbon_dioxide => 0,
       }
 
       # determined by running formulas through Mspire::Mass.massdiff

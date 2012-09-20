@@ -17,6 +17,8 @@ parser = Trollop::Parser.new do
   opt :lithium, "search for i down to 1 lithium adducts", :default => 0
   opt :sodium, "search for i down to 1 sodium adducts", :default => 0
   opt :ammonium, "search for i down to 1 ammonium adducts", :default => 0
+  opt :ammonia_loss, "search for i down to 1 ammonia losses", :default => 0
+  opt :carbon_dioxide_loss, "search for i down to 1 CO2 losses", :default => 0
   opt :proton_gain, "search for i down to 1 proton additions", :default => 0
   opt :proton_loss, "search for i down to 1 proton losses", :default => 0
   opt :water_loss, "if used, *all* mods are also considered with i down to 0 water losses", :default => 0
@@ -66,7 +68,9 @@ mods = {
   lithium: LipidMod.new(:lithium),
   sodium: LipidMod.new(:sodium),
   ammonium: LipidMod.new(:ammonium),
-  proton_loss: LipidMod.new(:proton, :loss => true)
+  proton_loss: LipidMod.new(:proton, :loss => true),
+  ammonia_loss: LipidMod.new(:ammonium, :loss => true),
+  carbon_dioxide_loss: LipidMod.new(:carbon_dioxide, :loss => true),
 }
 
 lipids = Mspire::LipidMaps.parse_file(lipidmaps)
