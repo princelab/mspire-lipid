@@ -75,7 +75,8 @@ module Mspire
       # if no mass or formula is given then it searches command mods for the name
       # @param [Symbol] name the name of the mod
       # A number of opts are expected if they are not found in the FORMULAS,
-      # CHARGE, or MASSDIFFS hashes:
+      # CHARGE, or MASSDIFFS hashes.  However, the massdiff will be inferred
+      # from the formula if it is not given:
       #
       #     attributes:
       #     :formula = the chemical formula, lipidmaps style ("C2H4BrO") or

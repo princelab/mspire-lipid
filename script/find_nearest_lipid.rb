@@ -14,6 +14,7 @@ parser = Trollop::Parser.new do
   opt :top_n, "how many closest ions to print", :default => 3
   banner ""
   text "modifications: (at least 1 charged mod is required)"
+  #opt :newmod, "<name>:<formula>:<charge>:<L/G>:<#occurences>  L/G=loss or gain", :type => :string, :multi => true
   opt :lithium, "search for i down to 1 lithium adducts", :default => 0
   opt :sodium, "search for i down to 1 sodium adducts", :default => 0
   opt :ammonium, "search for i down to 1 ammonium adducts", :default => 0
@@ -22,6 +23,8 @@ parser = Trollop::Parser.new do
   opt :proton_gain, "search for i down to 1 proton additions", :default => 0
   opt :proton_loss, "search for i down to 1 proton losses", :default => 0
   opt :water_loss, "if used, *all* mods are also considered with i down to 0 water losses", :default => 0
+  text ""
+  text "other:"
   opt :textfile, "a text file with m/z values, one per line", :type => String
   opt :lower_bound, "use lower bound searching (requires m/z's to be in sorted order)"
   opt :sort, "sorts the m/z's"
@@ -35,6 +38,7 @@ if ARGV.size == 0
 end
 
 CHARGED_MODS = [:lithium, :sodium, :ammonium, :proton_gain, :proton_loss]
+UNCHARGED_MODS = [:water_loss, :carbon_dioxide_loss, :ammonia_loss]
 
 unless CHARGED_MODS.any? {|key| opts[key] > 0 }
   puts "*" * 78
@@ -81,8 +85,10 @@ lipids.each do |lipid|
     if opts[key] > 0
       opts[key].downto(1) do |num_charge_mod|
         mods_to_use = [mods[key]] * num_charge_mod
-        opts[:water_loss].downto(0) do |i|
-          ions << Mspire::Lipid::Ion.new(lipid, mods_to_use + ([mods[:water_loss]]*i)) 
+        UNCHARGED_MODS.each do |umod|
+          opts[umod].downto(0) do |i|
+            ions << Mspire::Lipid::Ion.new(lipid, mods_to_use + ([mods[:umod]]*i)) 
+          end
         end
       end
     end
