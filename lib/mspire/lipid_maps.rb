@@ -30,6 +30,10 @@ module Mspire
                 :download
               when 21
                 :download_sd
+              when 22
+                :download_2013
+              when 23
+                :download_sd_2013  # <- have not test this yet
               end
       index_mapping = 
         case lm_ft
@@ -52,8 +56,27 @@ module Mspire
             :structure => 20,
           }
           Mspire::Lipid.members.map {|key| indices[key] }
+        when :download_2013, :download_sd_2013
+          indices = {
+            :lm_id => 2,
+            :systematic_name => 3,
+            :category => 5,
+            :main_class => 6,
+            :mass => 7,
+            :formula => 8,
+            :pubchem_id => 9,
+            # add in future->?
+            #:pubchem_cid => 10,
+            :inchi_key => 11,
+            :common_name => 13,
+            :kegg_id => 14,
+            :chebi_id => 15,
+            :sub_class => 16,
+            :structure => 22,
+          }
+          Mspire::Lipid.members.map {|key| indices[key] }
         end
-      
+
       formula_i = index_mapping[Mspire::Lipid.members.index(:formula)]
 
       lipids = io.each_line.map do |line|
