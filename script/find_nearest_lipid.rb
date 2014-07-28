@@ -14,15 +14,17 @@ parser = Trollop::Parser.new do
   opt :top_n, "how many closest ions to print", :default => 3
   banner ""
   text "modifications: (at least 1 charged mod is required)"
+  text "will search for i down to 1 mod: "
   #opt :newmod, "<name>:<formula>:<charge>:<L/G>:<#occurences>  L/G=loss or gain", :type => :string, :multi => true
-  opt :lithium, "search for i down to 1 lithium adducts", :default => 0
-  opt :sodium, "search for i down to 1 sodium adducts", :default => 0
-  opt :ammonium, "search for i down to 1 ammonium adducts", :default => 0
+  opt :lithium, "Li+ gain", :default => 0
+  opt :sodium, "Na+ gain", :default => 0
+  opt :ammonium, "", :default => 0
   opt :ammonia_loss, "search for i down to 1 ammonia losses", :default => 0
   opt :carbon_dioxide_loss, "search for i down to 1 CO2 losses", :default => 0
   opt :proton_gain, "search for i down to 1 proton additions", :default => 0
   opt :proton_loss, "search for i down to 1 proton losses", :default => 0
   opt :water_loss, "if used, *all* mods are also considered with i down to 0 water losses", :default => 0
+  opt :acetate, "search for i down to 0 water losses", :default => 0
   text ""
   text "other:"
   opt :textfile, "a text file with m/z values, one per line", :type => String

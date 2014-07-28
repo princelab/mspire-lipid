@@ -46,6 +46,7 @@ module Mspire
         :water => 'H2O',
         :ammonia => 'NH3',
         :carbon_dioxide => 'CO2',
+        :acetate => 'C2H3O2',  # OAc-  # need to work out negative charge
       }
       CHARGE = {
         :proton => 1,
@@ -55,6 +56,7 @@ module Mspire
         :water => 0,
         :ammonia => 0,
         :carbon_dioxide => 0,
+        :acetate => -1,  
       }
 
       # determined by running formulas through Mspire::Mass.massdiff
