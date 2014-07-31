@@ -53,5 +53,18 @@ describe Mspire::Lipid::Modification do
     mymod.charge = 2
     mymod.massdiff = Mspire::Lipid::Modification.massdiff(mymod.formula, mymod.charge)
     mymod.massdiff.should be_within(1e4).of(16.030202)
+
+    mymod.formula = 'CH4'
+    mymod.charge = 2
+    mymod.massdiff = Mspire::Lipid::Modification.massdiff(mymod.formula, mymod.charge)
+    mymod.massdiff.should be_within(1e4).of(16.030202)
+  end
+
+  it 'handles mods with negative charges' do
+    mod = Mod.new(:acetate)    
+    p mod.formula
+    p mod.massdiff
+    p mod.massdiff
+    p mod.charge
   end
 end
