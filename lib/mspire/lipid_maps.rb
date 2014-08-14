@@ -95,7 +95,7 @@ module Mspire
             lipid.formula = Mspire::MolecularFormula.from_string(lipid.formula)
           end
           if lm_ft == :programmatic && opts[:high_res_mass]
-            lipid.mass = Mspire::Mass.formula_to_exact_mass(lipid.formula)
+            lipid.mass = lipid.formula.mass
           end
           if opts[:rubabel_molecules]
             lipid.structure = Rubabel::Molecule.from_string(lipid.structure.gsub('|', "\n"), :sdf)

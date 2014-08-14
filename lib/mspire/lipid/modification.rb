@@ -11,10 +11,9 @@ module Mspire
       # calculates the mass diff.  For every positive charge the mass of an
       # electron is subtracted; for every negative charge the mass of an
       # electron is added.  If gain is false, then the mass diff will be
-      # negative.
+      # negative. Formula may be a string.
       def self.massdiff(formula, charge, gain=true)
-        Mspire::Mass.formula_to_exact_mass(formula)
-        massdiff = Mspire::Mass.formula_to_exact_mass(formula)
+        massdiff = Mspire::MolecularFormula[formula].mass
         massdiff -= (charge * Mspire::Mass::ELECTRON) # + charge subtracts, - charge adds
         massdiff = -massdiff unless gain
         massdiff

@@ -19,7 +19,7 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   [
-    ["mspire", "~> 0.10.8.0"],
+    ["mspire-molecular_formula", "~> 0.1.0"],
     ["rubabel", ">= 0.1.6"],
   ].each do |args|
     spec.add_dependency(*args)
@@ -31,6 +31,7 @@ Gem::Specification.new do |spec|
     ["rspec", "~> 2.14.1"], 
     ["rdoc", "~> 4.1.1"], 
     ["simplecov", "~> 0.8.2"],
+    ["fftw3"], # just until not needed in mspire-molform
   ].each do |args|
     spec.add_development_dependency(*args)
   end

@@ -3,10 +3,12 @@ require 'spec_helper'
 require 'mspire/lipid'
 require 'mspire/lipid/modification'
 require 'mspire/lipid/ion'
+require 'mspire/mass/element'
+require 'mspire/mass/common'
 
 module MSS
-  CO2 = ( %w(c o o).map {|e| Mspire::Mass::MONO[e] }.reduce(:+) )
-  H2O = Mspire::Mass::MONO['h2o']
+  CO2 = ( %w(C O O).map {|e| Mspire::Mass::Element::MONO_STRING[e] }.reduce(:+) )
+  H2O = Mspire::Mass::Common::MONO_STRING['H2O']
   PROTON_LOSS = Mspire::Lipid::Modification.new(:proton, :loss => true)
 end
 

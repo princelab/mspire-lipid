@@ -45,7 +45,7 @@ describe Mspire::LipidMaps do
         ll.lm_id.should == 'LMFA00000014'
         ll.mass.should == 347.282416
         ll.formula.should be_a(Mspire::MolecularFormula)
-        ll.formula[:c].should == 22  # <- frozen
+        ll.formula[:C].should == 22  # <- frozen
         if file =~ /_sd_/
           ll.structure.include?('25 24  0  0  0  0  0  0  0  0999 V2000').should be_true
           if HAVE_RUBABEL
