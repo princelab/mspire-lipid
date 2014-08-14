@@ -4,24 +4,9 @@ require 'mspire/molecular_formula'
 module Mspire
   class Lipid
 
-
     # the convention is all mods are gains unless the name ends in an
     # underscore
-    class Modification
-
-      # given a string with a formula and charge, returns the formula portion
-      # and the charges (as a signed integer)
-      def self.formula_and_charge(string)
-        md = string.match(/([^+]*)(\+*)$/)
-        charges_string = md[2]
-        if charges_string.nil?
-          0
-        else
-          charges_string.count(charges_string[0])
-          int = -int if charges_string[0] == '-'
-        end
-        [md[1], int]
-      end
+    class Modification < Mspire::MolecularFormula
 
       # calculates the mass diff.  For every positive charge the mass of an
       # electron is subtracted; for every negative charge the mass of an
